@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} | Nutrient – The Super Food{% endblock %}
+
+{% block content %}
+<div class="py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold text-dark mb-1">{{ title }}</h3>
+            <p class="text-muted small mb-0">Craft dish recipe, pricing, and transparent macronutrient breakdown</p>
+        </div>
+        <a href="{% url 'menu:admin_food_list' %}" class="btn btn-outline-secondary rounded-pill btn-sm">
+            <i class="fa-solid fa-arrow-left me-1"></i> Back to Dishes
+        </a>
+    </div>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="row g-4">
+            <!-- Left Column: Core Dish Info & Nutrition Facts -->
+            <div class="col-lg-8">
+                <!-- Basic Info Card -->
+                <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white mb-4">
+                    <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-bowl-food text-success me-2"></i>Dish Details</h5>
+                    
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-semibold text-muted">Dish Name <span class="text-danger">*</span></label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <div class="text-danger small mt-1">{{ form.name.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-semibold text-muted">Category <span class="text-danger">*</span></label>
+                            {{ form.category }}
+                            {% if form.category.errors %}
+                                <div class="text-danger small mt-1">{{ form.category.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-semibold text-muted">Dietary Classification <span class="text-danger">*</span></label>
+                            {{ form.food_type }}
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-semibold text-muted">Preparation Time (Minutes)</label>
+                            {{ form.preparation_time_mins }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted">Description & Ingredients <span class="text-danger">*</span></label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <div class="text-danger small mt-1">{{ form.description.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-semibold text-muted">Regular Price (₹) <span class="text-danger">*</span></label>
+                            {{ form.price }}
+                            {% if form.price.errors %}
+                                <div class="text-danger small mt-1">{{ form.price.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-semibold text-muted">Discounted Price (₹, Optional)</label>
+                            {{ form.discounted_price }}
+                            {% if form.discounted_price.errors %}
+                                <div class="text-danger small mt-1">{{ form.discounted_price.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Nutritional Macros Card (Nutrient Brand Core) -->
+                <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
+                    <h5 class="fw-bold text-dark mb-1"><i class="fa-solid fa-heart-pulse text-success me-2"></i>Macronutrient Breakdown</h5>
+                    <p class="text-muted small mb-4">Values displayed prominently to fitness customers on menus and receipts.</p>
+
+                    <div class="row g-3">
+                        <div class="col-sm-4">
+                            <label class="form-label small fw-semibold text-muted">Calories (kcal) <span class="text-danger">*</span></label>
+                            {{ form.calories }}
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label small fw-semibold text-muted">Protein (grams) <span class="text-danger">*</span></label>
+                            {{ form.protein_grams }}
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label small fw-semibold text-muted">Carbohydrates (grams)</label>
+                            {{ form.carbs_grams }}
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-semibold text-muted">Healthy Fats (grams)</label>
+                            {{ form.fats_grams }}
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-semibold text-muted">Dietary Fiber (grams)</label>
+                            {{ form.fiber_grams }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Badges, Availability & Photo -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+                    <h6 class="fw-bold text-dark mb-3 text-uppercase small tracking-wider">Stock & Inventory</h6>
+                    <div class="form-check form-switch mb-3">
+                        {{ form.is_available }}
+                        <label class="form-check-label fw-bold text-dark" for="{{ form.is_available.id_for_label }}">
+                            Available In Kitchen
+                        </label>
+                        <div class="form-text small">Toggle off when ingredients run out.</div>
+                    </div>
+
+                    <hr>
+
+                    <h6 class="fw-bold text-dark mb-3 text-uppercase small tracking-wider">Health & Operational Badges</h6>
+                    
+                    <div class="form-check mb-2">
+                        {{ form.is_zero_preservative }}
+                        <label class="form-check-label small" for="{{ form.is_zero_preservative.id_for_label }}">
+                            100% Zero Preservatives
+                        </label>
+                    </div>
+
+                    <div class="form-check mb-2">
+                        {{ form.is_high_protein }}
+                        <label class="form-check-label small" for="{{ form.is_high_protein.id_for_label }}">
+                            High Protein (>= 25g)
+                        </label>
+                    </div>
+
+                    <div class="form-check mb-2">
+                        {{ form.is_calorie_conscious }}
+                        <label class="form-check-label small" for="{{ form.is_calorie_conscious.id_for_label }}">
+                            Calorie Conscious (<= 400 kcal)
+                        </label>
+                    </div>
+
+                    <div class="form-check mb-2">
+                        {{ form.is_gluten_free }}
+                        <label class="form-check-label small" for="{{ form.is_gluten_free.id_for_label }}">
+                            Gluten-Free
+                        </label>
+                    </div>
+
+                    <div class="form-check mb-2">
+                        {{ form.is_keto_friendly }}
+                        <label class="form-check-label small" for="{{ form.is_keto_friendly.id_for_label }}">
+                            Keto Friendly
+                        </label>
+                    </div>
+
+                    <div class="form-check mb-2">
+                        {{ form.is_bestseller }}
+                        <label class="form-check-label small" for="{{ form.is_bestseller.id_for_label }}">
+                            Customer Bestseller
+                        </label>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        {{ form.is_chef_special }}
+                        <label class="form-check-label small" for="{{ form.is_chef_special.id_for_label }}">
+                            Chef Special Creation
+                        </label>
+                    </div>
+
+                    <hr>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted d-block">Food Photo</label>
+                        {% if form.instance.image %}
+                            <div class="mb-2 p-2 bg-light rounded-3 text-center border">
+                                <img src="{{ form.instance.image.url }}" alt="{{ form.instance.name }}" class="img-fluid rounded-3 shadow-sm" style="max-height: 140px; object-fit: cover;">
+                                <div class="small text-muted mt-1">Current Photo</div>
+                            </div>
+                        {% endif %}
+                        {{ form.image }}
+                        <div class="form-text small" style="font-size: 0.72rem;">Choose a new image to replace or update.</div>
+                    </div>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-nutrient py-3 rounded-pill fw-bold shadow-sm">
+                        <i class="fa-solid fa-floppy-disk me-2"></i>Save Food Item
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

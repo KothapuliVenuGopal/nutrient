@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirm Deletion | Nutrient – The Super Food{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5">
+    <div class="col-md-6 col-lg-5">
+        <div class="card border-0 shadow-sm rounded-4 p-4 text-center bg-white">
+            <div class="brand-icon-box bg-danger bg-opacity-10 text-danger rounded-circle d-inline-flex align-items-center justify-content-center mx-auto mb-3" style="width: 60px; height: 60px;">
+                <i class="fa-solid fa-triangle-exclamation fs-3"></i>
+            </div>
+            <h5 class="fw-bold text-dark">Confirm Permanent Deletion</h5>
+            <p class="text-secondary small mb-4">
+                Are you sure you want to permanently delete <strong>{{ object_name }}</strong>?
+            </p>
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="d-flex justify-content-center gap-2">
+                    <a href="{% url cancel_url %}" class="btn btn-light rounded-pill px-4">Cancel</a>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 shadow-sm">Yes, Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

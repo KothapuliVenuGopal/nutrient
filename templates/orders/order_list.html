@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block title %}My Super Food Orders | Nutrient – The Super Food{% endblock %}
+
+{% block content %}
+<div class="py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+        <div>
+            <h3 class="fw-bold text-dark mb-1">My Orders</h3>
+            <p class="text-muted small mb-0">Review past clean meals and track real-time kitchen deliveries</p>
+        </div>
+        <a href="{% url 'menu:food_list' %}" class="btn btn-nutrient rounded-pill btn-sm px-3 shadow-sm">
+            <i class="fa-solid fa-plus me-1"></i> Order Fresh Meal
+        </a>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="d-flex flex-wrap gap-2 mb-4">
+        <a href="?tab=all" class="btn btn-sm rounded-pill px-3 {% if active_tab == 'all' or not active_tab %}btn-dark-navy text-white{% else %}btn-outline-secondary{% endif %}">
+            All Orders ({{ total_orders_count }})
+        </a>
+        <a href="?tab=active" class="btn btn-sm rounded-pill px-3 {% if active_tab == 'active' %}btn-dark-navy text-white{% else %}btn-outline-secondary{% endif %}">
+            <i class="fa-solid fa-fire-burner text-warning me-1"></i> Active in Kitchen ({{ active_count }})
+        </a>
+        <a href="?tab=completed" class="btn btn-sm rounded-pill px-3 {% if active_tab == 'completed' %}btn-dark-navy text-white{% else %}btn-outline-secondary{% endif %}">
+            <i class="fa-solid fa-circle-check text-success me-1"></i> Delivered
+        </a>
+        <a href="?tab=cancelled" class="btn btn-sm rounded-pill px-3 {% if active_tab == 'cancelled' %}btn-dark-navy text-white{% else %}btn-outline-secondary{% endif %}">
+            Cancelled
+        </a>
+    </div>
+
+    {% if page_obj %}
+        <div class="d-flex flex-column gap-3 mb-4">
+            {% for order in page_obj %}
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+                    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3 pb-2 border-bottom">
+                        <div>
+                            <span class="badge bg-light text-muted border me-2">{{ order.created_at|date:"M d, Y • h:i A" }}</span>
+                            <strong class="text-dark">{{ order.order_number }}</strong>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge {% if order.status == 'DELIVERED' %}bg-success{% elif order.status == 'CANCELLED' %}bg-danger{% elif order.status == 'PENDING' %}bg-warning text-dark{% else %}bg-primary{% endif %} px-3 py-1 rounded-pill">
+                                {{ order.get_status_display }}
+                            </span>
+                            <a href="{% url 'orders:order_detail' order.order_number %}" class="btn btn-sm btn-outline-success rounded-pill px-3">
+                                View & Track
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 align-items-center">
+                        <div class="col-md-7">
+                            <div class="small text-secondary mb-1">
+                                {% for item in order.items.all %}
+                                    <strong class="text-dark">{{ item.quantity }}x</strong> {{ item.food_name }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            </div>
+                            <small class="text-muted d-block">
+                                <i class="fa-solid fa-location-dot me-1 text-success"></i>{{ order.delivery_address|truncatewords:8 }}
+                            </small>
+                        </div>
+                        <div class="col-md-5 text-md-end d-flex flex-column flex-md-row justify-content-md-end align-items-md-center gap-3">
+                            <div class="small text-muted">
+                                <span class="d-block"><strong class="fs-5 text-dark">₹{{ order.total_amount }}</strong></span>
+                                <span class="text-success fw-semibold">{{ order.total_protein }}g Protein</span> &bull; 
+                                <span>{{ order.total_calories }} kcal</span>
+                            </div>
+                            <!-- Reorder Button -->
+                            <form method="post" action="{% url 'orders:customer_reorder' order.order_number %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-light rounded-pill border px-3" title="Add items from this order into your cart">
+                                    <i class="fa-solid fa-rotate-right me-1 text-success"></i> Reorder
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination Controls -->
+        {% if page_obj.has_other_pages %}
+            <nav class="d-flex justify-content-center">
+                <ul class="pagination pagination-sm">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if active_tab %}&tab={{ active_tab }}{% endif %}">&laquo;</a></li>
+                    {% endif %}
+                    {% for p in page_obj.paginator.page_range %}
+                        <li class="page-item {% if page_obj.number == p %}active{% endif %}">
+                            <a class="page-link" href="?page={{ p }}{% if active_tab %}&tab={{ active_tab }}{% endif %}">{{ p }}</a>
+                        </li>
+                    {% endfor %}
+                    {% if page_obj.has_next %}
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if active_tab %}&tab={{ active_tab }}{% endif %}">&raquo;</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="text-center py-5 bg-white rounded-4 shadow-sm p-5">
+            <div class="brand-icon-box bg-light text-muted rounded-circle d-inline-flex align-items-center justify-content-center mx-auto mb-3" style="width: 70px; height: 70px;">
+                <i class="fa-solid fa-clock-rotate-left fs-2 text-success"></i>
+            </div>
+            <h5 class="fw-bold text-dark">No Orders in this View</h5>
+            <p class="text-muted small mb-3">Check out our fresh menu to order your next healthy meal.</p>
+            <a href="{% url 'menu:food_list' %}" class="btn btn-nutrient rounded-pill px-4">
+                Explore Clean Menu
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

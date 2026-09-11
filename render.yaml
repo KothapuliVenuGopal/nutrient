@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: nutrient-food-delivery
+    runtime: python
+    buildCommand: ./build.sh
+    startCommand: gunicorn food_delivery.wsgi:application --bind 0.0.0.0:$PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.7
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_HOSTS
+        value: .onrender.com,localhost,127.0.0.1
+      - key: USE_SQLITE
+        value: "False"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: nutrient-db
+          property: connectionString
+
+databases:
+  - name: nutrient-db
+    databaseName: nutrient_db
+    user: nutrient_user
+    plan: free

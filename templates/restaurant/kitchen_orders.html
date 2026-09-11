@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+
+{% block title %}Kitchen Orders Display (KDS) | Nutrient – The Super Food{% endblock %}
+
+{% block content %}
+<div class="py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+        <div>
+            <span class="badge bg-dark-navy text-success px-3 py-1 rounded-pill mb-1">Kitchen Display System</span>
+            <h3 class="fw-bold text-dark mb-0">Kitchen Live Orders Queue</h3>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'restaurant:dashboard' %}" class="btn btn-outline-secondary rounded-pill btn-sm">
+                <i class="fa-solid fa-arrow-left me-1"></i> Dashboard & Analytics
+            </a>
+            <button onclick="window.location.reload();" class="btn btn-light rounded-pill btn-sm border">
+                <i class="fa-solid fa-rotate me-1 text-success"></i> Refresh Queue
+            </button>
+        </div>
+    </div>
+
+    <!-- Status Filters -->
+    <div class="d-flex flex-wrap gap-2 mb-4">
+        <a href="?status=active" class="btn btn-sm rounded-pill px-3 {% if status_filter == 'active' %}btn-dark-navy text-white{% else %}btn-light border{% endif %}">
+            <i class="fa-solid fa-fire-burner text-warning me-1"></i> Active Pipeline
+        </a>
+        <a href="?status=PENDING" class="btn btn-sm rounded-pill px-3 {% if status_filter == 'PENDING' %}btn-dark-navy text-white{% else %}btn-light border{% endif %}">
+            Pending Orders
+        </a>
+        <a href="?status=PREPARING" class="btn btn-sm rounded-pill px-3 {% if status_filter == 'PREPARING' %}btn-dark-navy text-white{% else %}btn-light border{% endif %}">
+            In Kitchen Prep
+        </a>
+        <a href="?status=READY_FOR_PICKUP" class="btn btn-sm rounded-pill px-3 {% if status_filter == 'READY_FOR_PICKUP' %}btn-dark-navy text-white{% else %}btn-light border{% endif %}">
+            Ready for Pickup
+        </a>
+        <a href="?status=OUT_FOR_DELIVERY" class="btn btn-sm rounded-pill px-3 {% if status_filter == 'OUT_FOR_DELIVERY' %}btn-dark-navy text-white{% else %}btn-light border{% endif %}">
+            Dispatched
+        </a>
+        <a href="?status=DELIVERED" class="btn btn-sm rounded-pill px-3 {% if status_filter == 'DELIVERED' %}btn-dark-navy text-white{% else %}btn-light border{% endif %}">
+            Delivered
+        </a>
+        <a href="?status=all" class="btn btn-sm rounded-pill px-3 {% if status_filter == 'all' %}btn-dark-navy text-white{% else %}btn-light border{% endif %}">
+            All History
+        </a>
+    </div>
+
+    <!-- Today's Meal Subscriptions Section (Lunch 12:30-1:30 PM & Dinner 7:30-8:30 PM) -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden border-start border-4 border-success">
+        <div class="card-header bg-white py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-success text-white rounded-pill px-3 py-1"><i class="fa-solid fa-calendar-check me-1"></i> Today's Subscriptions</span>
+                <span class="fw-bold text-dark fs-6">{{ today_subscriptions|length }} Scheduled Deliveries for Today ({{ today_date|date:"M d, Y" }})</span>
+            </div>
+            <span class="badge bg-light text-secondary border">Lunch: 12:30–1:30 PM &bull; Dinner: 7:30–8:30 PM (Free 3km delivery)</span>
+        </div>
+        <div class="card-body p-3">
+            {% if today_subscriptions %}
+                <div class="row g-3">
+                    {% for sub_del in today_subscriptions %}
+                        <div class="col-md-6 col-lg-4">
+                            <div class="card h-100 border rounded-3 p-3 bg-light position-relative">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <span class="badge {% if sub_del.time_slot == 'LUNCH' %}bg-warning text-dark{% else %}bg-primary text-white{% endif %} rounded-pill">
+                                        <i class="fa-solid {% if sub_del.time_slot == 'LUNCH' %}fa-sun{% else %}fa-moon{% endif %} me-1"></i> {{ sub_del.get_time_slot_display }}
+                                    </span>
+                                    <span class="badge {% if sub_del.status == 'DELIVERED' %}bg-success{% elif sub_del.status == 'PREPARING' %}bg-info text-dark{% elif sub_del.status == 'OUT_FOR_DELIVERY' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                        {{ sub_del.get_status_display }}
+                                    </span>
+                                </div>
+                                <h6 class="fw-bold text-dark mb-1">{{ sub_del.subscription.plan.name }}</h6>
+                                <div class="small text-muted mb-2">
+                                    <i class="fa-solid fa-user me-1"></i>{{ sub_del.subscription.user.get_display_name }} ({{ sub_del.subscription.user.phone|default:'No phone' }})<br>
+                                    <i class="fa-solid fa-location-dot me-1 text-danger"></i>{{ sub_del.subscription.delivery_address.street_address|truncatewords:6 }}
+                                </div>
+                                <div class="bg-white p-2 rounded-2 border mb-2">
+                                    <div class="small fw-bold text-dark mb-1">Custom Bowl Ingredients:</div>
+                                    {% if sub_del.customization_summary %}
+                                        <div class="d-flex flex-wrap gap-1">
+                                            {% for line in sub_del.customization_summary %}
+                                                <span class="badge bg-light text-dark border px-2 py-0" style="font-size: 0.68rem;">
+                                                    <i class="fa-solid fa-check text-success me-1"></i>{{ line }}
+                                                </span>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted small">Standard Chef Formulation</span>
+                                    {% endif %}
+                                </div>
+                                <div class="mt-auto pt-2 border-top d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">OTP: <strong>{{ sub_del.delivery_otp|default:'----' }}</strong></small>
+                                    <form method="post" action="{% url 'restaurant:subscription_delivery_status' sub_del.id %}" class="d-flex gap-1">
+                                        {% csrf_token %}
+                                        {% if sub_del.status == 'SCHEDULED' %}
+                                            <input type="hidden" name="status" value="PREPARING">
+                                            <button type="submit" class="btn btn-warning btn-sm rounded-pill py-0 px-2" style="font-size: 0.75rem;">Start Prep</button>
+                                        {% elif sub_del.status == 'PREPARING' %}
+                                            <input type="hidden" name="status" value="OUT_FOR_DELIVERY">
+                                            <button type="submit" class="btn btn-info btn-sm text-white rounded-pill py-0 px-2" style="font-size: 0.75rem;">Dispatch</button>
+                                        {% elif sub_del.status == 'OUT_FOR_DELIVERY' %}
+                                            <input type="hidden" name="status" value="DELIVERED">
+                                            <button type="submit" class="btn btn-success btn-sm rounded-pill py-0 px-2" style="font-size: 0.75rem;">Mark Delivered</button>
+                                        {% else %}
+                                            <span class="text-success small fw-bold"><i class="fa-solid fa-check-double"></i> Complete</span>
+                                        {% endif %}
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-3 text-muted small">
+                    <i class="fa-solid fa-circle-check text-success me-1"></i> No subscription deliveries scheduled for today yet.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Orders Queue Grid -->
+    {% if orders %}
+        <div class="row g-4">
+            {% for order in orders %}
+                <div class="col-md-6 col-xl-4">
+                    <div class="card h-100 border-0 shadow-sm rounded-4 p-4 bg-white border-top border-4 {% if order.status == 'PENDING' %}border-warning{% elif order.status == 'CONFIRMED' %}border-primary{% elif order.status == 'PREPARING' %}border-info{% elif order.status == 'READY_FOR_PICKUP' %}border-success{% elif order.status == 'OUT_FOR_DELIVERY' %}border-secondary{% else %}border-light{% endif %}">
+                        <div class="d-flex justify-content-between align-items-start mb-2 pb-2 border-bottom">
+                            <div>
+                                <span class="badge {% if order.status == 'PENDING' %}bg-warning text-dark{% elif order.status == 'CONFIRMED' %}bg-primary{% elif order.status == 'PREPARING' %}bg-info text-dark{% elif order.status == 'READY_FOR_PICKUP' %}bg-success{% else %}bg-secondary{% endif %} px-2 py-1 rounded-pill small">
+                                    {{ order.get_status_display }}
+                                </span>
+                                <strong class="text-dark d-block mt-1">{{ order.order_number }}</strong>
+                            </div>
+                            <small class="text-muted">{{ order.created_at|date:"h:i A" }}</small>
+                        </div>
+
+                        <!-- Customer & Destination -->
+                        <div class="small mb-3">
+                            <strong class="text-dark">{{ order.delivery_name }}</strong> &bull; 
+                            <a href="tel:{{ order.delivery_phone }}" class="text-decoration-none text-success">{{ order.delivery_phone }}</a>
+                            <div class="text-muted lh-sm">{{ order.delivery_address|truncatewords:8 }}</div>
+                            {% if order.customer_notes %}
+                                <div class="p-2 bg-light rounded-3 text-danger mt-2">
+                                    <i class="fa-solid fa-circle-exclamation me-1"></i>{{ order.customer_notes }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Items Checklist -->
+                        <div class="bg-light p-3 rounded-4 mb-3 flex-grow-1">
+                            <h6 class="fw-bold text-dark small text-uppercase tracking-wider mb-2">Dishes to Prepare</h6>
+                            <ul class="list-unstyled small mb-0 d-flex flex-column gap-2">
+                                {% for itm in order.items.all %}
+                                    <li class="d-flex justify-content-between">
+                                        <span>
+                                            <strong class="text-success">{{ itm.quantity }}x</strong> {{ itm.food_name }}
+                                            {% if itm.customization_summary %}
+                                                <div class="mt-1 d-flex flex-wrap gap-1">
+                                                    {% for line in itm.customization_summary %}
+                                                        <span class="badge bg-white text-dark border px-2 py-0" style="font-size: 0.68rem;">
+                                                            <i class="fa-solid fa-check text-success me-1"></i>{{ line }}
+                                                        </span>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                            {% if itm.special_instructions %}
+                                                <small class="text-muted d-block fst-italic">Note: {{ itm.special_instructions }}</small>
+                                            {% endif %}
+                                        </span>
+                                        <span class="text-muted">{{ itm.calories }} kcal</span>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+
+                        <!-- Footer & Quick Status Advance -->
+                        <div class="pt-2 border-top d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong class="fs-6 text-dark">₹{{ order.total_amount }}</strong>
+                                <small class="text-muted d-block">{{ order.payment.get_payment_method_display }}</small>
+                            </div>
+
+                            <div>
+                                {% if order.status == 'PENDING' %}
+                                    <form method="post" action="{% url 'orders:order_status_update' order.order_number %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="status" value="CONFIRMED">
+                                        <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm">
+                                            Confirm Order
+                                        </button>
+                                    </form>
+                                {% elif order.status == 'CONFIRMED' %}
+                                    <form method="post" action="{% url 'orders:order_status_update' order.order_number %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="status" value="PREPARING">
+                                        <button type="submit" class="btn btn-sm btn-warning text-dark rounded-pill px-3 shadow-sm">
+                                            Start Prep
+                                        </button>
+                                    </form>
+                                {% elif order.status == 'PREPARING' %}
+                                    <form method="post" action="{% url 'orders:order_status_update' order.order_number %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="status" value="READY_FOR_PICKUP">
+                                        <button type="submit" class="btn btn-sm btn-info text-white rounded-pill px-3 shadow-sm">
+                                            Mark Ready
+                                        </button>
+                                    </form>
+                                {% elif order.status == 'READY_FOR_PICKUP' %}
+                                    <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill">
+                                        Awaiting Rider Dispatch
+                                    </span>
+                                {% elif order.status == 'OUT_FOR_DELIVERY' %}
+                                    <form method="post" action="{% url 'orders:order_status_update' order.order_number %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="status" value="DELIVERED">
+                                        <button type="submit" class="btn btn-sm btn-outline-success rounded-pill px-3">
+                                            Delivered
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-5 bg-white rounded-4 shadow-sm p-5">
+            <i class="fa-solid fa-kitchen-set text-muted fs-1 mb-2"></i>
+            <h5 class="fw-bold text-dark">No Orders Matching Filter</h5>
+            <p class="text-muted small mb-0">All kitchen orders are currently up to date.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

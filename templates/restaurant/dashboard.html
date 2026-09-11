@@ -1,0 +1,445 @@
+{% extends 'base.html' %}
+
+{% block title %}Kitchen Executive Dashboard | Nutrient – The Super Food{% endblock %}
+
+{% block extra_css %}
+<style>
+.chart-container {
+    position: relative;
+    height: 260px;
+    width: 100%;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="py-4">
+    <!-- Top Header Bar with Operational Kill Switch -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <span class="badge bg-success-subtle text-success px-3 py-1 rounded-pill mb-1">
+                Executive Command Center
+            </span>
+            <h2 class="fw-bold text-dark mb-0">{{ profile.name }}</h2>
+            <small class="text-muted">{{ profile.address_line }}, {{ profile.city }} &bull; Kitchen Hotline: {{ profile.phone }}</small>
+        </div>
+
+        <div class="d-flex align-items-center gap-3">
+            <form method="post" action="{% url 'restaurant:toggle_orders' %}" class="d-inline">
+                {% csrf_token %}
+                {% if profile.is_accepting_orders %}
+                    <button type="submit" class="btn btn-success rounded-pill px-4 shadow-sm fw-bold">
+                        <i class="fa-solid fa-circle-check me-2"></i>Kitchen Accepting Orders
+                    </button>
+                {% else %}
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 shadow-sm fw-bold animate-pulse">
+                        <i class="fa-solid fa-circle-pause me-2"></i>Orders Paused (Click to Resume)
+                    </button>
+                {% endif %}
+            </form>
+
+            <a href="{% url 'menu:admin_food_list' %}" class="btn btn-nutrient rounded-pill px-3 shadow-sm fw-bold">
+                <i class="fa-solid fa-bolt me-1"></i> + Dishes & Stock
+            </a>
+
+            <a href="{% url 'restaurant:whatsapp_settings' %}" class="btn btn-outline-success rounded-pill px-3">
+                <i class="fa-brands fa-whatsapp me-1"></i> WhatsApp
+            </a>
+
+            <a href="{% url 'restaurant:settings' %}" class="btn btn-outline-secondary rounded-pill px-3">
+                <i class="fa-solid fa-gear me-1"></i> Settings
+            </a>
+        </div>
+    </div>
+
+    <!-- Admin Navigation Quick Bar -->
+    <div class="card border-0 shadow-sm rounded-4 p-2 mb-4 bg-white">
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'restaurant:dashboard' %}" class="btn btn-dark-navy rounded-pill px-3 btn-sm active">
+                <i class="fa-solid fa-chart-line me-1"></i> Dashboard & Analytics
+            </a>
+            <a href="{% url 'restaurant:kitchen_orders' %}" class="btn btn-light rounded-pill px-3 btn-sm">
+                <i class="fa-solid fa-fire-burner text-warning me-1"></i> Live Kitchen Queue ({{ active_kitchen_orders.count }})
+            </a>
+            <a href="{% url 'menu:admin_food_list' %}" class="btn btn-light rounded-pill px-3 btn-sm">
+                <i class="fa-solid fa-bowl-food text-success me-1"></i> Manage Dishes ({{ total_food_items }})
+            </a>
+            <a href="{% url 'restaurant:meal_whatsapp_dashboard' %}" class="btn btn-light rounded-pill px-3 btn-sm">
+                <i class="fa-brands fa-whatsapp text-success me-1"></i> Every-Meal Alerts
+            </a>
+            <a href="{% url 'restaurant:whatsapp_settings' %}" class="btn btn-light rounded-pill px-3 btn-sm">
+                <i class="fa-solid fa-envelope-open-text text-secondary me-1"></i> Welcome Catalog
+            </a>
+            <a href="{% url 'restaurant:hours' %}" class="btn btn-light rounded-pill px-3 btn-sm">
+                <i class="fa-solid fa-clock text-info me-1"></i> Business Hours
+            </a>
+            <a href="{% url 'reviews:admin_reviews' %}" class="btn btn-light rounded-pill px-3 btn-sm">
+                <i class="fa-solid fa-comments text-success me-1"></i> Reviews
+            </a>
+            <a href="/admin/" target="_blank" class="btn btn-light rounded-pill px-3 btn-sm ms-auto">
+                <i class="fa-solid fa-arrow-up-right-from-square text-secondary me-1"></i> Django Admin
+            </a>
+        </div>
+    </div>
+
+    <!-- Executive Financial KPIs -->
+    <div class="row g-4 mb-4">
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100 border-top border-4 border-success">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small text-uppercase tracking-wider fw-semibold">Today's Sales</span>
+                    <div class="text-success fs-4"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+                </div>
+                <h2 class="fw-extrabold text-dark mb-1">₹{{ today_revenue }}</h2>
+                <small class="text-muted">All-Time Delivered: <strong>₹{{ all_time_revenue }}</strong></small>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100 border-top border-4 border-primary">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small text-uppercase tracking-wider fw-semibold">Avg Order Value</span>
+                    <div class="text-primary fs-4"><i class="fa-solid fa-receipt"></i></div>
+                </div>
+                <h2 class="fw-extrabold text-dark mb-1">₹{{ average_order_value }}</h2>
+                <small class="text-muted">Total Delivered Orders: <strong>{{ delivered_count }}</strong></small>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100 border-top border-4 border-warning">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small text-uppercase tracking-wider fw-semibold">Active Kitchen Pipeline</span>
+                    <div class="text-warning fs-4"><i class="fa-solid fa-fire-burner"></i></div>
+                </div>
+                <h2 class="fw-extrabold text-dark mb-1">{{ active_kitchen_orders.count }}</h2>
+                <small class="text-muted">
+                    <span class="text-warning fw-bold">{{ pending_orders_count }} Pending</span> &bull; 
+                    <span class="text-primary fw-bold">{{ preparing_orders_count }} Cooking</span>
+                </small>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100 border-top border-4 border-danger">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small text-uppercase tracking-wider fw-semibold">Menu Inventory</span>
+                    <div class="text-danger fs-4"><i class="fa-solid fa-cubes-stacked"></i></div>
+                </div>
+                <h2 class="fw-extrabold text-dark mb-1">{{ total_food_items }}</h2>
+                <small class="text-muted">
+                    <span class="text-success fw-bold">{{ total_food_items|add:"-out_of_stock_count" }} In Stock</span> &bull; 
+                    <span class="text-danger fw-bold">{{ out_of_stock_count }} Sold Out</span>
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart.js Analytics Visualizations -->
+    <div class="row g-4 mb-5">
+        <!-- 7-Day Revenue & Orders Trend -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h5 class="fw-bold text-dark mb-0">7-Day Sales & Order Velocity</h5>
+                        <small class="text-muted">Daily performance tracking in Hyderabad</small>
+                    </div>
+                    <span class="badge bg-light text-muted border px-3 py-1 rounded-pill">Weekly Trend</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Status Distribution -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                <h5 class="fw-bold text-dark mb-1">Order Pipeline Mix</h5>
+                <small class="text-muted mb-3 d-block">Breakdown by current lifecycle stage</small>
+                <div class="chart-container d-flex align-items-center justify-content-center">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Bestselling Dishes -->
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h5 class="fw-bold text-dark mb-0">Top 5 Bestselling Super Foods</h5>
+                        <small class="text-muted">Most frequently ordered clean meals</small>
+                    </div>
+                    <i class="fa-solid fa-award text-warning fs-4"></i>
+                </div>
+                <div style="height: 200px;">
+                    <canvas id="topDishesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Kitchen Order Dispatch Panel -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+            <div>
+                <h4 class="fw-bold text-dark mb-1">Live Active Kitchen Orders</h4>
+                <p class="text-muted small mb-0">State-machine controls to advance orders through kitchen and fleet dispatch</p>
+            </div>
+            <a href="{% url 'restaurant:kitchen_orders' %}" class="btn btn-sm btn-outline-success rounded-pill px-3">
+                Open Full Kitchen Display (KDS)
+            </a>
+        </div>
+
+        {% if active_kitchen_orders %}
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead class="table-light small">
+                        <tr>
+                            <th style="width: 15%;">Order / Time</th>
+                            <th style="width: 25%;">Customer & Address</th>
+                            <th style="width: 25%;">Ordered Dishes & Macros</th>
+                            <th style="width: 15%;">Bill & Payment</th>
+                            <th style="width: 20%;" class="text-end pe-3">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in active_kitchen_orders %}
+                            <tr>
+                                <td>
+                                    <strong class="text-dark d-block">{{ order.order_number }}</strong>
+                                    <small class="text-muted">{{ order.created_at|date:"h:i A" }}</small>
+                                    <div>
+                                        <span class="badge {% if order.status == 'PENDING' %}bg-warning text-dark{% elif order.status == 'CONFIRMED' %}bg-primary{% elif order.status == 'PREPARING' %}bg-info text-dark{% elif order.status == 'READY_FOR_PICKUP' %}bg-success-subtle text-success{% else %}bg-secondary{% endif %} px-2 py-1 rounded-pill small mt-1">
+                                            {{ order.get_status_display }}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <strong class="text-dark d-block">{{ order.delivery_name }}</strong>
+                                    <small class="text-secondary d-block">{{ order.delivery_phone }}</small>
+                                    <small class="text-muted lh-sm d-block">{{ order.delivery_address|truncatewords:6 }}</small>
+                                </td>
+                                <td>
+                                    <div class="small mb-1">
+                                        {% for item in order.items.all %}
+                                            <span class="fw-bold text-dark">{{ item.quantity }}x</span> {{ item.food_name }}{% if not forloop.last %}, {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    <span class="badge bg-dark-navy text-success small" style="font-size: 0.7rem;">
+                                        {{ order.total_protein }}g Protein &bull; {{ order.total_calories }} kcal
+                                    </span>
+                                    {% if order.customer_notes %}
+                                        <div class="text-danger small mt-1"><i class="fa-solid fa-circle-exclamation me-1"></i>{{ order.customer_notes }}</div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <strong class="fs-6 text-dark d-block">₹{{ order.total_amount }}</strong>
+                                    <small class="text-muted">{{ order.payment.get_payment_method_display }}</small>
+                                    {% if order.payment.is_paid %}
+                                        <span class="badge bg-success-subtle text-success d-block w-fit mt-1">Paid</span>
+                                    {% else %}
+                                        <span class="badge bg-warning-subtle text-warning-emphasis d-block w-fit mt-1">Collect Cash</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-3">
+                                    <!-- Contextual State Machine Transition Form -->
+                                    {% if order.status == 'PENDING' %}
+                                        <form method="post" action="{% url 'orders:order_status_update' order.order_number %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="status" value="CONFIRMED">
+                                            <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm">
+                                                <i class="fa-solid fa-check me-1"></i> Accept
+                                            </button>
+                                        </form>
+                                    {% elif order.status == 'CONFIRMED' %}
+                                        <form method="post" action="{% url 'orders:order_status_update' order.order_number %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="status" value="PREPARING">
+                                            <button type="submit" class="btn btn-sm btn-warning text-dark rounded-pill px-3 shadow-sm">
+                                                <i class="fa-solid fa-fire-burner me-1"></i> Start Prep
+                                            </button>
+                                        </form>
+                                    {% elif order.status == 'PREPARING' %}
+                                        <form method="post" action="{% url 'orders:order_status_update' order.order_number %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="status" value="READY_FOR_PICKUP">
+                                            <button type="submit" class="btn btn-sm btn-info text-white rounded-pill px-3 shadow-sm">
+                                                <i class="fa-solid fa-box me-1"></i> Ready
+                                            </button>
+                                        </form>
+                                    {% elif order.status == 'READY_FOR_PICKUP' %}
+                                        <button type="button" class="btn btn-sm btn-success rounded-pill px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#dispatchModal-{{ order.id }}">
+                                            <i class="fa-solid fa-motorcycle me-1"></i> Assign Rider
+                                        </button>
+
+                                        <!-- Dispatch Modal -->
+                                        <div class="modal fade text-start" id="dispatchModal-{{ order.id }}" tabindex="-1">
+                                            <div class="modal-dialog modal-dialog-centered">
+                                                <div class="modal-content border-0 shadow rounded-4">
+                                                    <div class="modal-header border-0 pb-0">
+                                                        <h5 class="modal-title fw-bold text-dark">Dispatch Order #{{ order.order_number }}</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <form method="post" action="{% url 'restaurant:assign_rider' order.order_number %}">
+                                                        {% csrf_token %}
+                                                        <div class="modal-body">
+                                                            <p class="small text-muted mb-3">
+                                                                Delivery to: <strong>{{ order.delivery_name }}</strong> ({{ order.delivery_address|truncatewords:6 }})
+                                                            </p>
+                                                            <div class="mb-3">
+                                                                <label class="form-label small fw-semibold text-muted">Select Available Delivery Partner</label>
+                                                                <select name="rider_id" class="form-select" required>
+                                                                    <option value="">-- Choose Rider --</option>
+                                                                    {% for rider in available_riders %}
+                                                                        <option value="{{ rider.id }}">{{ rider.user.get_display_name }} ({{ rider.vehicle_number }} - {{ rider.get_vehicle_type_display }})</option>
+                                                                    {% endfor %}
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer border-0 pt-0">
+                                                            <button type="button" class="btn btn-light rounded-pill btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+                                                            <button type="submit" class="btn btn-nutrient rounded-pill btn-sm px-4 fw-bold shadow-sm">
+                                                                Confirm Dispatch
+                                                            </button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% elif order.status == 'OUT_FOR_DELIVERY' %}
+                                        <form method="post" action="{% url 'orders:order_status_update' order.order_number %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="status" value="DELIVERED">
+                                            <button type="submit" class="btn btn-sm btn-outline-success rounded-pill px-3">
+                                                <i class="fa-solid fa-circle-check me-1"></i> Mark Delivered
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fa-solid fa-kitchen-set text-muted fs-1 mb-2"></i>
+                <h5 class="fw-bold text-dark">Kitchen Queue is Clear</h5>
+                <p class="text-muted small mb-0">No orders pending in the kitchen right now.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Chart.js CDN and Initializer Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Revenue & Orders Trend Chart
+    const revCtx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(revCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ chart_days_labels|safe }},
+            datasets: [
+                {
+                    label: 'Revenue (₹)',
+                    data: {{ chart_revenue_data|safe }},
+                    backgroundColor: 'rgba(46, 204, 113, 0.75)',
+                    borderColor: '#27AE60',
+                    borderWidth: 1,
+                    borderRadius: 6,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Order Count',
+                    data: {{ chart_orders_data|safe }},
+                    type: 'line',
+                    borderColor: '#0B132B',
+                    backgroundColor: '#0B132B',
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    ticks: { callback: val => `₹${val}` }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    grid: { drawOnChartArea: false },
+                    ticks: { stepSize: 1 }
+                }
+            }
+        }
+    });
+
+    // 2. Order Status Distribution Chart
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ chart_status_labels|safe }},
+            datasets: [{
+                data: {{ chart_status_data|safe }},
+                backgroundColor: [
+                    '#2ECC71', // Delivered (Green)
+                    '#F39C12', // Active Prep (Ochre)
+                    '#3498DB', // Dispatched (Blue)
+                    '#95A5A6', // Pending (Gray)
+                    '#E74C3C'  // Cancelled (Red)
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+            }
+        }
+    });
+
+    // 3. Top Bestselling Dishes
+    const topDishesCtx = document.getElementById('topDishesChart').getContext('2d');
+    new Chart(topDishesCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ chart_top_dish_names|safe }},
+            datasets: [{
+                label: 'Units Sold',
+                data: {{ chart_top_dish_quantities|safe }},
+                backgroundColor: 'rgba(11, 19, 43, 0.85)',
+                borderColor: '#0B132B',
+                borderWidth: 1,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { ticks: { stepSize: 1 } }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

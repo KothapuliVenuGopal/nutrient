@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}Weekly Operating Hours | Nutrient – The Super Food{% endblock %}
+
+{% block content %}
+<div class="py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold text-dark mb-1">Kitchen Operating Hours</h3>
+            <p class="text-muted small mb-0">Set opening and closing times for Hyderabad deliveries</p>
+        </div>
+        <a href="{% url 'restaurant:dashboard' %}" class="btn btn-outline-secondary rounded-pill btn-sm">
+            <i class="fa-solid fa-arrow-left me-1"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
+        <form method="post">
+            {% csrf_token %}
+            <div class="table-responsive mb-4">
+                <table class="table align-middle">
+                    <thead class="table-light small">
+                        <tr>
+                            <th style="width: 25%;">Day of Week</th>
+                            <th style="width: 25%;">Opening Time</th>
+                            <th style="width: 25%;">Closing Time</th>
+                            <th style="width: 25%;">Closed for Day</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for hour in hours %}
+                            <tr>
+                                <td>
+                                    <strong class="text-dark">{{ hour.get_day_of_week_display }}</strong>
+                                </td>
+                                <td>
+                                    <input type="time" name="day_{{ hour.day_of_week }}_opening_time" value="{{ hour.opening_time|time:'H:i' }}" class="form-control form-control-sm">
+                                </td>
+                                <td>
+                                    <input type="time" name="day_{{ hour.day_of_week }}_closing_time" value="{{ hour.closing_time|time:'H:i' }}" class="form-control form-control-sm">
+                                </td>
+                                <td>
+                                    <div class="form-check">
+                                        <input type="checkbox" name="day_{{ hour.day_of_week }}_is_closed" class="form-check-input" id="closed_{{ hour.day_of_week }}" {% if hour.is_closed %}checked{% endif %}>
+                                        <label class="form-check-label small text-danger fw-semibold" for="closed_{{ hour.day_of_week }}">Closed</label>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="d-flex justify-content-end">
+                <button type="submit" class="btn btn-nutrient px-4 py-2 rounded-pill fw-bold shadow-sm">
+                    <i class="fa-solid fa-floppy-disk me-2"></i>Save Weekly Hours
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

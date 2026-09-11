@@ -1,0 +1,471 @@
+{% extends 'base.html' %}
+
+{% block title %}Nutrient – The Super Food | Clean Nutrition & High-Protein Meals in Hyderabad{% endblock %}
+
+{% block content %}
+<!-- Hero Brand Banner -->
+<div class="rounded-4 p-4 p-md-5 mb-4 bg-dark-navy text-white position-relative overflow-hidden shadow-sm">
+    <div class="row align-items-center position-relative" style="z-index: 2;">
+        <div class="col-lg-8">
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                <span class="badge bg-success-subtle text-success px-3 py-1 rounded-pill">
+                    <i class="fa-solid fa-seedling me-1"></i> 100% Zero Preservatives
+                </span>
+                <span class="badge bg-warning-subtle text-warning-emphasis px-3 py-1 rounded-pill">
+                    <i class="fa-solid fa-dumbbell me-1"></i> High-Protein Focused
+                </span>
+                {% if is_kitchen_open %}
+                    <span class="badge bg-success text-white px-3 py-1 rounded-pill">
+                        <i class="fa-solid fa-circle me-1" style="font-size: 0.5rem;"></i> Accepting Orders
+                    </span>
+                {% else %}
+                    <span class="badge bg-danger text-white px-3 py-1 rounded-pill">
+                        <i class="fa-solid fa-circle-pause me-1"></i> Kitchen Currently Offline
+                    </span>
+                {% endif %}
+            </div>
+            
+            <h1 class="display-5 fw-extrabold text-white mb-2 lh-sm">NUTRIENT / THE SUPER FOOD KITCHEN</h1>
+            <p class="lead text-white-50 mb-3 fs-6">
+                “Whole foods are minimally processed and full of vitamins, minerals, fiber and antioxidants. By focusing on natural, nutrient-dense options, you can enjoy balanced energy, strong immunity, and overall vitality.”
+            </p>
+            <div class="d-flex flex-wrap gap-2 mb-4">
+                <span class="badge bg-success text-white px-3 py-1 rounded-pill">
+                    <i class="fa-solid fa-truck-fast me-1"></i> Quick Free Delivery within 3km
+                </span>
+                <span class="badge bg-warning text-dark px-3 py-1 rounded-pill fw-bold">
+                    <i class="fa-solid fa-tag me-1"></i> 30% OFF Special Launch Discount
+                </span>
+            </div>
+            
+            <div class="d-flex flex-wrap gap-3 align-items-center">
+                <a href="#menu-catalog" class="btn btn-nutrient px-4 py-2 rounded-pill fw-bold shadow-sm">
+                    <i class="fa-solid fa-utensils me-2"></i>Order Super Food
+                </a>
+                <a href="{% url 'subscriptions:plans' %}" class="btn btn-warning text-dark px-4 py-2 rounded-pill fw-bold shadow-sm">
+                    <i class="fa-solid fa-calendar-check me-2"></i>Weekly & Monthly Subscriptions (30% OFF)
+                </a>
+            </div>
+        </div>
+
+        <div class="col-lg-4 text-center mt-4 mt-lg-0">
+            <div class="p-4 bg-white bg-opacity-10 rounded-4 border border-secondary border-opacity-25 text-start">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <i class="fa-solid fa-location-dot text-success fs-5"></i>
+                    <h6 class="fw-bold text-white mb-0">Delivery Hub</h6>
+                </div>
+                <p class="small text-white-50 mb-3">
+                    Fast delivery across Madhapur, HITEC City, Gachibowli, Kondapur, and Jubilee Hills.
+                </p>
+                <div class="small text-white-50">
+                    <i class="fa-solid fa-shield-halved text-success me-1"></i> Zero Chemicals &bull; Fresh Daily
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Menu Section Anchor -->
+<div id="menu-catalog" class="py-2 mb-4">
+
+    <!-- Meal Timing Slot Session Bar (Breakfast, Lunch, Snack, Dinner, Active Now) -->
+    <div class="card border-0 shadow-sm rounded-4 p-3 mb-4 bg-white">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 pb-3 border-bottom mb-3">
+            <div>
+                <span class="badge bg-success-subtle text-success px-3 py-1 rounded-pill small fw-semibold">
+                    <i class="fa-solid fa-clock me-1"></i> Automatic Kitchen Stock Timings
+                </span>
+                <h4 class="fw-bold text-dark mb-0 mt-1">Daily Meal Timing Windows</h4>
+            </div>
+            <div>
+                {% if current_slot.is_open %}
+                    <span class="badge bg-success text-white px-3 py-2 rounded-pill shadow-sm">
+                        <i class="fa-solid fa-circle me-1 animate-pulse" style="font-size: 0.55rem;"></i> Active Window: <strong>{{ current_slot.name }} ({{ current_slot.timing }})</strong>
+                    </span>
+                {% else %}
+                    <span class="badge bg-secondary text-white px-3 py-2 rounded-pill shadow-sm">
+                        <i class="fa-solid fa-moon me-1"></i> Kitchen Closed (11:00 PM – 07:00 AM) &bull; Opens {{ current_slot.next_slot }}
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Slot Navigation Buttons -->
+        <div class="d-flex align-items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+            <a href="?slot=active{% if selected_category_slug %}&category={{ selected_category_slug }}{% endif %}{% if selected_diet_type %}&type={{ selected_diet_type }}{% endif %}{% if selected_tag %}&tag={{ selected_tag }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" 
+               class="btn btn-sm rounded-pill px-3 fw-bold text-nowrap {% if selected_slot == 'active' %}btn-success text-white shadow-sm{% else %}btn-outline-secondary{% endif %}">
+                <i class="fa-solid fa-bolt me-1"></i> Active Now {% if current_slot.is_open %}({{ current_slot.name }}){% endif %}
+            </a>
+            <a href="?slot=breakfast{% if selected_category_slug %}&category={{ selected_category_slug }}{% endif %}{% if selected_diet_type %}&type={{ selected_diet_type }}{% endif %}{% if selected_tag %}&tag={{ selected_tag }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" 
+               class="btn btn-sm rounded-pill px-3 fw-bold text-nowrap {% if selected_slot == 'breakfast' %}btn-dark-navy text-white shadow-sm{% else %}btn-outline-secondary{% endif %}">
+                🌅 Breakfast <small class="text-muted">(07:00 - 11:30 AM)</small>
+            </a>
+            <a href="?slot=lunch{% if selected_category_slug %}&category={{ selected_category_slug }}{% endif %}{% if selected_diet_type %}&type={{ selected_diet_type }}{% endif %}{% if selected_tag %}&tag={{ selected_tag }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" 
+               class="btn btn-sm rounded-pill px-3 fw-bold text-nowrap {% if selected_slot == 'lunch' %}btn-dark-navy text-white shadow-sm{% else %}btn-outline-secondary{% endif %}">
+                ☀️ Lunch <small class="text-muted">(11:30 AM - 04:00 PM)</small>
+            </a>
+            <a href="?slot=snack{% if selected_category_slug %}&category={{ selected_category_slug }}{% endif %}{% if selected_diet_type %}&type={{ selected_diet_type }}{% endif %}{% if selected_tag %}&tag={{ selected_tag }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" 
+               class="btn btn-sm rounded-pill px-3 fw-bold text-nowrap {% if selected_slot == 'snack' %}btn-dark-navy text-white shadow-sm{% else %}btn-outline-secondary{% endif %}">
+                🥗 Snack <small class="text-muted">(04:00 - 07:00 PM)</small>
+            </a>
+            <a href="?slot=dinner{% if selected_category_slug %}&category={{ selected_category_slug }}{% endif %}{% if selected_diet_type %}&type={{ selected_diet_type }}{% endif %}{% if selected_tag %}&tag={{ selected_tag }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" 
+               class="btn btn-sm rounded-pill px-3 fw-bold text-nowrap {% if selected_slot == 'dinner' %}btn-dark-navy text-white shadow-sm{% else %}btn-outline-secondary{% endif %}">
+                🌙 Dinner <small class="text-muted">(07:00 - 11:00 PM)</small>
+            </a>
+            <a href="?slot=all{% if selected_category_slug %}&category={{ selected_category_slug }}{% endif %}{% if selected_diet_type %}&type={{ selected_diet_type }}{% endif %}{% if selected_tag %}&tag={{ selected_tag }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" 
+               class="btn btn-sm rounded-pill px-3 fw-bold text-nowrap {% if selected_slot == 'all' %}btn-dark-navy text-white shadow-sm{% else %}btn-outline-secondary{% endif %}">
+                🍽️ All Super Foods
+            </a>
+        </div>
+    </div>
+
+    <!-- Category Pills Bar -->
+    <div class="d-flex align-items-center gap-2 overflow-x-auto pb-2 mb-4 no-scrollbar">
+        <a href="?{% if selected_slot %}slot={{ selected_slot }}&{% endif %}{% if selected_diet_type %}type={{ selected_diet_type }}&{% endif %}{% if selected_tag %}tag={{ selected_tag }}&{% endif %}{% if sort_by %}sort={{ sort_by }}&{% endif %}{% if search_query %}q={{ search_query }}&{% endif %}" 
+           class="btn btn-sm rounded-pill px-3 fw-semibold text-nowrap {% if not selected_category_slug %}btn-dark-navy text-white{% else %}btn-outline-secondary{% endif %}">
+            All Categories
+        </a>
+        {% for cat in categories %}
+            <a href="?category={{ cat.slug }}{% if selected_slot %}&slot={{ selected_slot }}{% endif %}{% if selected_diet_type %}&type={{ selected_diet_type }}{% endif %}{% if selected_tag %}&tag={{ selected_tag }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" 
+               class="btn btn-sm rounded-pill px-3 fw-semibold text-nowrap {% if selected_category_slug == cat.slug %}btn-dark-navy text-white{% else %}btn-outline-secondary{% endif %}">
+                {{ cat.name }}
+            </a>
+        {% endfor %}
+    </div>
+
+    <!-- Multi-Facet Filters & Search Bar -->
+    <div class="card border-0 shadow-sm rounded-4 p-3 mb-4 bg-white">
+        <form method="get" class="row g-2 align-items-center">
+            <!-- Retain active category and slot -->
+            {% if selected_category_slug %}
+                <input type="hidden" name="category" value="{{ selected_category_slug }}">
+            {% endif %}
+            {% if selected_slot %}
+                <input type="hidden" name="slot" value="{{ selected_slot }}">
+            {% endif %}
+
+            <!-- Keyword Search -->
+            <div class="col-lg-4 col-md-5">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                    <input type="text" name="q" value="{{ search_query }}" class="form-control border-start-0 bg-light" placeholder="Search protein bowls, quinoa, salad...">
+                </div>
+            </div>
+
+            <!-- Diet Classification Filter -->
+            <div class="col-sm-4 col-md-2 col-lg-2">
+                <select name="type" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">Diet: All Types</option>
+                    <option value="VEG" {% if selected_diet_type == 'VEG' %}selected{% endif %}>🥬 Vegetarian</option>
+                    <option value="NON_VEG" {% if selected_diet_type == 'NON_VEG' %}selected{% endif %}>🍗 Non-Veg</option>
+                    <option value="VEGAN" {% if selected_diet_type == 'VEGAN' %}selected{% endif %}>🌱 Vegan</option>
+                </select>
+            </div>
+
+            <!-- Nutrition / Goal Filter -->
+            <div class="col-sm-4 col-md-3 col-lg-3">
+                <select name="tag" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">Goal: All Goals</option>
+                    <option value="high_protein" {% if selected_tag == 'high_protein' %}selected{% endif %}>⚡ High Protein (&ge; 25g)</option>
+                    <option value="calorie_conscious" {% if selected_tag == 'calorie_conscious' %}selected{% endif %}>🥗 Calorie Conscious (&le; 400 kcal)</option>
+                    <option value="bestseller" {% if selected_tag == 'bestseller' %}selected{% endif %}>🔥 Bestsellers</option>
+                    <option value="gluten_free" {% if selected_tag == 'gluten_free' %}selected{% endif %}>🌾 Gluten-Free</option>
+                    <option value="keto" {% if selected_tag == 'keto' %}selected{% endif %}>🥑 Keto-Friendly</option>
+                </select>
+            </div>
+
+            <!-- Sorting Engine -->
+            <div class="col-sm-4 col-md-2 col-lg-2">
+                <select name="sort" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="recommended" {% if sort_by == 'recommended' %}selected{% endif %}>Featured</option>
+                    <option value="protein_desc" {% if sort_by == 'protein_desc' %}selected{% endif %}>Highest Protein</option>
+                    <option value="calories_asc" {% if sort_by == 'calories_asc' %}selected{% endif %}>Lowest Calories</option>
+                    <option value="price_asc" {% if sort_by == 'price_asc' %}selected{% endif %}>Price: Low to High</option>
+                    <option value="price_desc" {% if sort_by == 'price_desc' %}selected{% endif %}>Price: High to Low</option>
+                </select>
+            </div>
+
+            <div class="col-12 col-md-auto ms-auto d-flex gap-2">
+                <button type="submit" class="btn btn-sm btn-dark-navy rounded-pill px-3">Filter</button>
+                {% if search_query or selected_diet_type or selected_tag or selected_category_slug or sort_by != 'recommended' or selected_slot != 'active' %}
+                    <a href="{% url 'menu:food_list' %}" class="btn btn-sm btn-light rounded-pill px-3" title="Clear all filters">
+                        <i class="fa-solid fa-rotate-left me-1"></i> Reset
+                    </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Active Filter Chips -->
+    {% if selected_diet_type or selected_tag or search_query or selected_slot != 'active' %}
+        <div class="d-flex flex-wrap gap-2 align-items-center mb-4">
+            <span class="small text-muted fw-semibold">Active filters:</span>
+            {% if selected_slot != 'active' %}
+                <span class="badge bg-dark-navy text-white px-3 py-2 rounded-pill shadow-sm">
+                    Slot: {{ selected_slot|title }}
+                </span>
+            {% endif %}
+            {% if search_query %}
+                <span class="badge bg-white text-dark border px-3 py-2 rounded-pill shadow-sm">
+                    Search: "{{ search_query }}"
+                </span>
+            {% endif %}
+            {% if selected_diet_type %}
+                <span class="badge bg-white text-dark border px-3 py-2 rounded-pill shadow-sm">
+                    Diet: {{ selected_diet_type }}
+                </span>
+            {% endif %}
+            {% if selected_tag %}
+                <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill shadow-sm">
+                    Tag: {{ selected_tag|title }}
+                </span>
+            {% endif %}
+            <span class="text-muted small ms-2">{{ items|length }} item{{ items|length|pluralize }} found</span>
+        </div>
+    {% endif %}
+
+    <!-- Food Items Grid -->
+    {% if items %}
+        <div class="row g-4">
+            {% for item in items %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden food-item-card food-card bg-white {% if not item.is_orderable %}opacity-75{% endif %}">
+                        <!-- Card Header & Badges -->
+                        <div class="position-relative bg-light text-center p-4">
+                            {% if item.image %}
+                                <img src="{{ item.image.url }}" alt="{{ item.name }}" class="img-fluid rounded-3 mb-2" style="max-height: 180px; object-fit: cover;">
+                            {% else %}
+                                <div class="py-4 text-success">
+                                    <i class="fa-solid fa-bowl-food" style="font-size: 4rem;"></i>
+                                </div>
+                            {% endif %}
+
+                            <!-- Top Badges Overlay -->
+                            <div class="position-absolute top-0 start-0 m-3 d-flex flex-column gap-1">
+                                <span class="badge {% if item.food_type == 'VEG' %}bg-success{% elif item.food_type == 'NON_VEG' %}bg-danger{% else %}bg-warning text-dark{% endif %} px-2 py-1 rounded-pill small">
+                                    {{ item.get_food_type_display }}
+                                </span>
+                                {% if item.is_high_protein %}
+                                    <span class="badge bg-primary px-2 py-1 rounded-pill" style="font-size: 0.65rem;">
+                                        <i class="fa-solid fa-dumbbell me-1"></i>HIGH PROTEIN
+                                    </span>
+                                {% endif %}
+                                <!-- Timing & Stock Status Pill -->
+                                {% if not item.is_available %}
+                                    <span class="badge bg-danger text-white px-2 py-1 rounded-pill shadow-sm" style="font-size: 0.65rem;">
+                                        <i class="fa-solid fa-ban me-1"></i>SOLD OUT
+                                    </span>
+                                {% elif item.auto_timing_enabled and not item.is_slot_active %}
+                                    <span class="badge bg-secondary text-white px-2 py-1 rounded-pill shadow-sm" style="font-size: 0.65rem;">
+                                        <i class="fa-solid fa-clock me-1"></i>TIMED OUT
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-success-subtle text-success px-2 py-1 rounded-pill" style="font-size: 0.65rem;">
+                                        <i class="fa-solid fa-circle-check me-1"></i>READY
+                                    </span>
+                                {% endif %}
+                            </div>
+
+                            <div class="position-absolute top-0 end-0 m-3 d-flex flex-column gap-1">
+                                {% if item.discount_percentage %}
+                                    <span class="badge bg-success text-white px-2 py-1 rounded-pill fw-bold" style="font-size: 0.7rem;">
+                                        {{ item.discount_percentage }}% OFF
+                                    </span>
+                                {% endif %}
+                                {% if item.is_bestseller %}
+                                    <span class="badge bg-dark-navy text-warning px-2 py-1 rounded-pill" style="font-size: 0.65rem;">
+                                        <i class="fa-solid fa-fire me-1"></i>BESTSELLER
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Card Body -->
+                        <div class="card-body p-4 d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="text-muted small">{{ item.category.name }}</span>
+                                <span class="badge bg-light text-muted border" style="font-size: 0.65rem;">
+                                    <i class="fa-solid fa-clock me-1"></i>{{ item.timing_badge_text }}
+                                </span>
+                            </div>
+                            <h5 class="fw-bold text-dark mb-2">
+                                <a href="{% url 'menu:food_detail' item.slug %}" class="text-dark text-decoration-none hover-text-success">
+                                    {{ item.name }}
+                                </a>
+                            </h5>
+                            <p class="text-secondary small mb-3 flex-grow-1 lh-sm">
+                                {{ item.description|truncatewords:14 }}
+                            </p>
+
+                            <!-- Macronutrient Bar (Key Brand Feature) -->
+                            <div class="p-2 rounded-3 bg-light mb-3">
+                                <div class="d-flex justify-content-around text-center small">
+                                    <div>
+                                        <strong class="text-dark d-block">{{ item.calories }}</strong>
+                                        <span class="text-muted" style="font-size: 0.7rem;">kcal</span>
+                                    </div>
+                                    <div class="border-start ps-2">
+                                        <strong class="text-success d-block">{{ item.protein_grams }}g</strong>
+                                        <span class="text-muted" style="font-size: 0.7rem;">Protein</span>
+                                    </div>
+                                    <div class="border-start ps-2">
+                                        <strong class="text-dark d-block">{{ item.carbs_grams }}g</strong>
+                                        <span class="text-muted" style="font-size: 0.7rem;">Carbs</span>
+                                    </div>
+                                    <div class="border-start ps-2">
+                                        <strong class="text-dark d-block">{{ item.fats_grams }}g</strong>
+                                        <span class="text-muted" style="font-size: 0.7rem;">Fats</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Price & Order Action -->
+                            <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                                <div>
+                                    <div class="d-flex align-items-baseline gap-2">
+                                        <span class="fs-5 fw-bold text-success">₹{{ item.effective_price }}</span>
+                                        {% if item.discounted_price %}
+                                            <span class="text-muted text-decoration-line-through small">₹{{ item.price }}</span>
+                                        {% endif %}
+                                    </div>
+                                    {% if item.savings_amount > 0 %}
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0" style="font-size: 0.65rem;">
+                                            30% OFF • Save ₹{{ item.savings_amount }}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <a href="{% url 'menu:food_detail' item.slug %}" class="btn btn-sm btn-outline-secondary rounded-pill px-2" title="Nutritional breakdown">
+                                        Details
+                                    </a>
+                                    {% if not item.is_available %}
+                                        <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold" disabled>
+                                            <i class="fa-solid fa-ban me-1"></i> Sold Out
+                                        </button>
+                                    {% elif item.auto_timing_enabled and not item.is_slot_active %}
+                                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-2 fw-semibold" disabled title="{{ item.timing_badge_text }}">
+                                            <i class="fa-solid fa-clock me-1"></i> Outside Hours
+                                        </button>
+                                    {% elif item.is_customizable %}
+                                        <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-bold open-customizer-btn" data-item-id="{{ item.id }}" data-item-name="{{ item.name }}">
+                                            <i class="fa-solid fa-sliders me-1"></i> Customize
+                                        </button>
+                                    {% else %}
+                                        <button type="button" class="btn btn-sm btn-nutrient rounded-pill px-3 fw-bold add-to-cart-btn" data-item-id="{{ item.id }}" data-item-name="{{ item.name }}">
+                                            <i class="fa-solid fa-plus me-1"></i> Add
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-5 bg-white rounded-4 shadow-sm p-5">
+            <div class="brand-icon-box bg-light text-muted rounded-circle d-inline-flex align-items-center justify-content-center mx-auto mb-3" style="width: 70px; height: 70px;">
+                <i class="fa-solid fa-magnifying-glass fs-2 text-success"></i>
+            </div>
+            <h4 class="fw-bold text-dark">No Super Food Dishes Found</h4>
+            <p class="text-muted small mb-4">No menu items match your current filter selection. Try clearing filters to see our full nutritious menu.</p>
+            <a href="{% url 'menu:food_list' %}" class="btn btn-nutrient rounded-pill px-4">
+                View All Menu Items
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Customer Testimonials Section -->
+{% if testimonials %}
+<div class="my-5">
+    <div class="text-center mb-4">
+        <span class="badge bg-success-subtle text-success px-3 py-1 rounded-pill mb-2">Verified Diner Stories</span>
+        <h3 class="fw-bold text-dark mb-1">Loved by Fitness Enthusiasts in Hyderabad</h3>
+        <p class="text-muted small">Real feedback from athletes, gym goers, and mindful eaters</p>
+    </div>
+
+    <div class="row g-4">
+        {% for t in testimonials %}
+            <div class="col-md-6 col-lg-3">
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100 d-flex flex-column">
+                    <div class="text-warning small mb-3">
+                        {% for i in "12345" %}
+                            {% if forloop.counter <= t.rating %}
+                                <i class="fa-solid fa-star"></i>
+                            {% else %}
+                                <i class="fa-regular fa-star text-muted"></i>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <p class="small text-secondary flex-grow-1 fst-italic mb-3">
+                        "{{ t.comment|truncatewords:20 }}"
+                    </p>
+                    <div class="pt-2 border-top">
+                        <div class="fw-bold text-dark small">{{ t.customer.get_display_name }}</div>
+                        {% if t.food_item %}
+                            <small class="text-success d-block">{{ t.food_item.name }}</small>
+                        {% else %}
+                            <small class="text-muted d-block">Verified Order</small>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Brand Philosophy Section -->
+<div id="philosophy" class="my-5 py-4">
+    <div class="card border-0 rounded-4 bg-dark-navy text-white p-4 p-md-5 shadow-sm">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-6">
+                <span class="badge bg-success-subtle text-success px-3 py-1 rounded-pill mb-2">Our Nutrition Manifesto</span>
+                <h2 class="fw-extrabold text-white mb-3">Clean Food, Real Ingredients, Real Results</h2>
+                <p class="text-white-50 mb-4">
+                    At Nutrient, we believe food is the ultimate fuel. Every meal is formulated without artificial preservatives, chemical flavor enhancers, or cheap seed oils. Whether your goal is lean muscle, weight management, or clean energy, our transparent macros make healthy eating effortless.
+                </p>
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-circle-check text-success fs-5"></i>
+                            <span class="small fw-semibold">Zero Refined Sugars</span>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-circle-check text-success fs-5"></i>
+                            <span class="small fw-semibold">Accurate Macro Counts</span>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-circle-check text-success fs-5"></i>
+                            <span class="small fw-semibold">Fresh Daily In Hyderabad</span>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-circle-check text-success fs-5"></i>
+                            <span class="small fw-semibold">Eco-Friendly Packaging</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6 text-center">
+                <div class="p-4 bg-white bg-opacity-10 rounded-4 border border-secondary border-opacity-25">
+                    <div class="fs-1 text-success mb-2"><i class="fa-solid fa-heart-pulse"></i></div>
+                    <h5 class="fw-bold text-white mb-2">Eat Clean. Stay Strong. Live Better.</h5>
+                    <p class="small text-white-50 mb-0">
+                        Have dietary allergies or custom meal inquiries? Contact our nutrition team via WhatsApp at <strong class="text-white">+91 7993476624</strong>.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include 'menu/bowl_customizer_modal.html' %}
+{% endblock %}

@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+
+{% block title %}Restaurant Configuration | Nutrient – The Super Food{% endblock %}
+
+{% block content %}
+<div class="py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold text-dark mb-1">Restaurant Profile & Operational Settings</h3>
+            <p class="text-muted small mb-0">Single-restaurant identity, billing parameters and operational thresholds</p>
+        </div>
+        <a href="{% url 'restaurant:dashboard' %}" class="btn btn-outline-secondary rounded-pill btn-sm">
+            <i class="fa-solid fa-arrow-left me-1"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="row g-4">
+            <!-- Core Brand Identity -->
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white mb-4">
+                    <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-store text-success me-2"></i>Brand Identity</h5>
+                    
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-semibold text-muted">Restaurant Name</label>
+                            {{ form.name }}
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-semibold text-muted">Primary Tagline</label>
+                            {{ form.tagline }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted">Secondary Tagline</label>
+                        {{ form.secondary_tagline }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted">About & Nutrition Philosophy</label>
+                        {{ form.description }}
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-4">
+                            <label class="form-label small fw-semibold text-muted">Phone Number</label>
+                            {{ form.phone }}
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label small fw-semibold text-muted">WhatsApp Number</label>
+                            {{ form.whatsapp_number }}
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label small fw-semibold text-muted">Contact Email</label>
+                            {{ form.email }}
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-semibold text-muted">Kitchen Address</label>
+                            {{ form.address_line }}
+                        </div>
+                        <div class="col-sm-2">
+                            <label class="form-label small fw-semibold text-muted">City</label>
+                            {{ form.city }}
+                        </div>
+                        <div class="col-sm-2">
+                            <label class="form-label small fw-semibold text-muted">State</label>
+                            {{ form.state }}
+                        </div>
+                        <div class="col-sm-2">
+                            <label class="form-label small fw-semibold text-muted">Pincode</label>
+                            {{ form.pincode }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Financial & Billing Policies -->
+                <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
+                    <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-receipt text-success me-2"></i>Financial & Delivery Rules</h5>
+                    
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-semibold text-muted">Minimum Order Value (₹)</label>
+                            {{ form.min_order_value }}
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-semibold text-muted">Default Delivery Charge (₹)</label>
+                            {{ form.default_delivery_charge }}
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-semibold text-muted">Free Delivery Threshold (₹)</label>
+                            {{ form.free_delivery_threshold }}
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-semibold text-muted">GST Tax Rate (%)</label>
+                            {{ form.tax_percentage }}
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-semibold text-muted">Max Delivery Radius (KM)</label>
+                            {{ form.delivery_radius_km }}
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-semibold text-muted">Average Prep Time (Minutes)</label>
+                            {{ form.avg_preparation_time_mins }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Operational Controls & Imagery -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+                    <h6 class="fw-bold text-dark mb-3 text-uppercase small tracking-wider">Kitchen Controls</h6>
+                    
+                    <div class="form-check form-switch mb-3">
+                        {{ form.is_accepting_orders }}
+                        <label class="form-check-label fw-bold" for="{{ form.is_accepting_orders.id_for_label }}">
+                            Accepting Online Orders
+                        </label>
+                        <div class="form-text small">Turn off immediately during kitchen overload.</div>
+                    </div>
+
+                    <hr>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted">Restaurant Logo</label>
+                        {{ form.logo }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted">Hero Banner Photo</label>
+                        {{ form.banner_image }}
+                    </div>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-nutrient py-3 rounded-pill fw-bold shadow-sm">
+                        <i class="fa-solid fa-floppy-disk me-2"></i>Save Configuration
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

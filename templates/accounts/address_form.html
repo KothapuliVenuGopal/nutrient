@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} | Nutrient – The Super Food{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+    <div class="col-md-8 col-lg-7">
+        <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h4 class="fw-bold text-dark mb-1">{{ title }}</h4>
+                    <p class="text-muted small mb-0">Delivery serviceable within Hyderabad</p>
+                </div>
+                <a href="{% if next %}{{ next }}{% else %}{% url 'accounts:address_list' %}{% endif %}" class="btn btn-sm btn-outline-secondary rounded-pill">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Back
+                </a>
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+                {% if next %}
+                    <input type="hidden" name="next" value="{{ next }}">
+                {% endif %}
+
+                <div class="row g-3 mb-3">
+                    <div class="col-sm-6">
+                        <label class="form-label small fw-semibold text-muted">Address Type</label>
+                        {{ form.address_type }}
+                        {% if form.address_type.errors %}
+                            <div class="text-danger small mt-1">{{ form.address_type.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label small fw-semibold text-muted">Recipient Name</label>
+                        {{ form.contact_name }}
+                        {% if form.contact_name.errors %}
+                            <div class="text-danger small mt-1">{{ form.contact_name.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-sm-6">
+                        <label class="form-label small fw-semibold text-muted">Recipient Phone Number</label>
+                        {{ form.contact_phone }}
+                        {% if form.contact_phone.errors %}
+                            <div class="text-danger small mt-1">{{ form.contact_phone.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label small fw-semibold text-muted">Flat / House / Building</label>
+                        {{ form.apartment_flat }}
+                        {% if form.apartment_flat.errors %}
+                            <div class="text-danger small mt-1">{{ form.apartment_flat.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold text-muted">Street Address / Locality <span class="text-danger">*</span></label>
+                    {{ form.street_address }}
+                    {% if form.street_address.errors %}
+                        <div class="text-danger small mt-1">{{ form.street_address.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-sm-6">
+                        <label class="form-label small fw-semibold text-muted">Landmark (Optional)</label>
+                        {{ form.landmark }}
+                        {% if form.landmark.errors %}
+                            <div class="text-danger small mt-1">{{ form.landmark.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label small fw-semibold text-muted">Pincode <span class="text-danger">*</span></label>
+                        {{ form.pincode }}
+                        {% if form.pincode.errors %}
+                            <div class="text-danger small mt-1">{{ form.pincode.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-sm-6">
+                        <label class="form-label small fw-semibold text-muted">City</label>
+                        {{ form.city }}
+                        {% if form.city.errors %}
+                            <div class="text-danger small mt-1">{{ form.city.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label small fw-semibold text-muted">State</label>
+                        {{ form.state }}
+                        {% if form.state.errors %}
+                            <div class="text-danger small mt-1">{{ form.state.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="form-check mb-4">
+                    {{ form.is_default }}
+                    <label class="form-check-label small text-secondary" for="{{ form.is_default.id_for_label }}">
+                        Set as my default delivery address
+                    </label>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="{% if next %}{{ next }}{% else %}{% url 'accounts:address_list' %}{% endif %}" class="btn btn-light rounded-pill px-4">Cancel</a>
+                    <button type="submit" class="btn btn-nutrient rounded-pill px-4 shadow-sm fw-bold">
+                        <i class="fa-solid fa-check me-1"></i> Save Address
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

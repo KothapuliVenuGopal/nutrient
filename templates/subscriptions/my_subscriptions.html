@@ -1,0 +1,357 @@
+{% extends 'base.html' %}
+
+{% block title %}My Subscriptions | NUTRIENT / THE SUPER FOOD KITCHEN{% endblock %}
+
+{% block content %}
+<div class="py-2 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h2 class="fw-extrabold text-dark mb-1">My Meal Subscriptions</h2>
+            <p class="text-muted small mb-0">Manage your active plans, daily delivery calendar, and custom recipes</p>
+        </div>
+        <a href="{% url 'subscriptions:plans' %}" class="btn btn-nutrient rounded-pill px-4 fw-bold">
+            <i class="fa-solid fa-plus me-1"></i> Browse New Plans
+        </a>
+    </div>
+
+    {% if active_subscription %}
+        <!-- Active Subscription Hero Card -->
+        <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 mb-5 bg-white position-relative overflow-hidden">
+            <div class="row align-items-center g-4">
+                <div class="col-lg-7">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="badge {% if active_subscription.is_paused %}bg-warning text-dark{% else %}bg-success text-white{% endif %} px-3 py-1 rounded-pill small fw-bold" id="subStatusBadge">
+                            <i class="fa-solid {% if active_subscription.is_paused %}fa-pause{% else %}fa-check-circle{% endif %} me-1"></i>
+                            <span id="subStatusText">{{ active_subscription.get_status_display|upper }}</span>
+                        </span>
+                        <span class="badge bg-light text-muted px-2 py-1 rounded-pill small border">
+                            {{ active_subscription.subscription_number }}
+                        </span>
+                    </div>
+
+                    <h3 class="fw-extrabold text-dark mb-1">{{ active_subscription.plan.name }}</h3>
+                    <p class="text-secondary small mb-3">
+                        Running from <strong>{{ active_subscription.start_date|date:"d M, Y" }}</strong> to <strong>{{ active_subscription.end_date|date:"d M, Y" }}</strong>
+                    </p>
+
+                    <!-- Progress Bar -->
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between small fw-bold mb-1">
+                            <span>Delivery Progress</span>
+                            <span class="text-success">{{ active_subscription.bowls_delivered }} of {{ active_subscription.bowls_total }} Bowls Delivered ({{ active_subscription.progress_percentage }}%)</span>
+                        </div>
+                        <div class="progress rounded-pill bg-light" style="height: 12px;">
+                            <div class="progress-bar bg-success rounded-pill" role="progressbar" style="width: {{ active_subscription.progress_percentage }}%;" aria-valuenow="{{ active_subscription.progress_percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <span class="text-muted small mt-1 d-block" style="font-size: 0.75rem;">
+                            {{ active_subscription.bowls_remaining }} fresh bowls remaining in this cycle
+                        </span>
+                    </div>
+
+                    <!-- Details Row -->
+                    <div class="row g-3 small text-secondary">
+                        <div class="col-sm-6">
+                            <div class="p-3 rounded-3 bg-light">
+                                <strong class="text-dark d-block mb-1"><i class="fa-solid fa-clock text-success me-1"></i> Daily Time Slot:</strong>
+                                <span>{{ active_subscription.get_delivery_time_slot_display }}</span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-3 rounded-3 bg-light">
+                                <strong class="text-dark d-block mb-1"><i class="fa-solid fa-location-dot text-success me-1"></i> Delivery Address:</strong>
+                                <span class="text-truncate d-block">{{ active_subscription.delivery_address.full_address }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Action Column -->
+                <div class="col-lg-5 text-lg-end border-start-lg ps-lg-4">
+                    <div class="p-3 bg-light rounded-4 text-center mb-3">
+                        <span class="text-muted small d-block">Subscriber Rate (30% OFF)</span>
+                        <div class="fs-3 fw-bold text-success">₹{{ active_subscription.plan.price }}</div>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill mt-1 small">
+                            Free 3km Home Delivery Included
+                        </span>
+                    </div>
+
+                    <div class="d-flex flex-column gap-2">
+                        <button type="button" class="btn {% if active_subscription.is_paused %}btn-success{% else %}btn-outline-warning{% endif %} rounded-pill fw-bold py-2 w-100" id="togglePauseBtn" data-sub-id="{{ active_subscription.id }}">
+                            <i class="fa-solid {% if active_subscription.is_paused %}fa-play{% else %}fa-pause{% endif %} me-1"></i>
+                            <span id="togglePauseBtnText">{% if active_subscription.is_paused %}Resume Deliveries{% else %}Pause Subscription{% endif %}</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upcoming Daily Deliveries Calendar Section -->
+        <div class="mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <div>
+                    <h4 class="fw-bold text-dark mb-0">Upcoming Daily Meals Schedule</h4>
+                    <p class="text-muted small mb-0">Customize your ingredients, dressing, and drinks for any upcoming date</p>
+                </div>
+            </div>
+
+            {% if upcoming_deliveries %}
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr class="text-secondary small fw-bold">
+                                    <th class="ps-4">Date</th>
+                                    <th>Shift & Time</th>
+                                    <th>Customized Meal Recipe</th>
+                                    <th>Status</th>
+                                    <th class="text-end pe-4">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for delivery in upcoming_deliveries %}
+                                    <tr>
+                                        <td class="ps-4 py-3">
+                                            <div class="fw-bold text-dark">{{ delivery.delivery_date|date:"D, d M Y" }}</div>
+                                            {% if delivery.is_today %}
+                                                <span class="badge bg-primary text-white rounded-pill" style="font-size: 0.65rem;">TODAY</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="small fw-semibold text-secondary">{{ delivery.get_time_slot_display }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="small">
+                                                {% if delivery.active_customization and delivery.active_customization.selected_options %}
+                                                    {% for group, opts in delivery.active_customization.selected_options.items %}
+                                                        <div class="text-muted" style="font-size: 0.78rem;">
+                                                            <strong>{{ group }}:</strong> 
+                                                            {% if opts|length > 0 %}{{ opts|join:", " }}{% else %}{{ opts }}{% endif %}
+                                                        </div>
+                                                    {% endfor %}
+                                                {% else %}
+                                                    <span class="text-muted">Chef's Standard Daily Super Bowl Recipe</span>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge {% if delivery.status == 'DELIVERED' %}bg-success{% elif delivery.status == 'PREPARING' %}bg-warning text-dark{% elif delivery.status == 'OUT_FOR_DELIVERY' %}bg-primary{% else %}bg-secondary-subtle text-secondary{% endif %} px-2 py-1 rounded-pill small">
+                                                {{ delivery.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td class="text-end pe-4">
+                                            {% if delivery.can_customize and customization_groups %}
+                                                <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-bold open-daily-customizer-btn" 
+                                                    data-delivery-id="{{ delivery.id }}" 
+                                                    data-delivery-date="{{ delivery.delivery_date|date:'D, d M Y' }}">
+                                                    <i class="fa-solid fa-sliders me-1"></i> Customize Meal
+                                                </button>
+                                            {% else %}
+                                                <span class="text-muted small">Locked</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% else %}
+                <div class="card border-0 shadow-sm rounded-4 p-4 text-center bg-white">
+                    <p class="text-muted small mb-0">All deliveries in your current cycle have been fulfilled.</p>
+                </div>
+            {% endif %}
+        </div>
+
+    {% else %}
+        <!-- No Active Subscription Card -->
+        <div class="card border-0 shadow-sm rounded-4 p-5 text-center bg-white mb-5">
+            <div class="brand-icon-box bg-success-subtle text-success rounded-circle d-inline-flex align-items-center justify-content-center mx-auto mb-3" style="width: 80px; height: 80px;">
+                <i class="fa-solid fa-calendar-plus fs-1"></i>
+            </div>
+            <h4 class="fw-bold text-dark mb-2">You Don't Have an Active Subscription</h4>
+            <p class="text-secondary small mb-4 mx-auto" style="max-width: 480px;">
+                Fuel your wellness journey with our Weekly (7 bowls) or Monthly (30 bowls) plans. Enjoy 30% discount, free 3km delivery, and customize every meal.
+            </p>
+            <div>
+                <a href="{% url 'subscriptions:plans' %}" class="btn btn-nutrient rounded-pill px-4 py-2 fw-bold shadow-sm">
+                    <i class="fa-solid fa-sparkles me-1"></i> View Available Subscription Plans
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Modal: Customize Daily Meal -->
+{% if customization_groups %}
+<div class="modal fade" id="dailyMealCustomizerModal" tabindex="-1" aria-labelledby="dailyMealCustomizerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
+            <div class="modal-header bg-dark-navy text-white p-4">
+                <div>
+                    <span class="badge bg-success text-white px-2 py-1 rounded-pill small fw-bold mb-1">
+                        DAILY MEAL CUSTOMIZER
+                    </span>
+                    <h5 class="modal-title fw-bold" id="dailyCustomizerModalTitle">Customize Meal for Date</h5>
+                    <p class="text-white-50 small mb-0">Select your preferred ingredients for this specific delivery day</p>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body p-4" style="max-height: 65vh; overflow-y: auto;">
+                <form id="dailyMealCustomizerForm">
+                    <input type="hidden" id="currentDeliveryId" value="">
+                    {% for group in customization_groups %}
+                        <div class="card border rounded-3 p-3 mb-3 bg-white shadow-none daily-group" data-group-name="{{ group.name }}" data-max-choices="{{ group.max_choices }}">
+                            <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                                <h6 class="fw-bold mb-0 text-dark">{{ forloop.counter }}. {{ group.name }}</h6>
+                                <span class="badge bg-secondary-subtle text-secondary px-2 py-0" style="font-size: 0.65rem;">
+                                    {% if group.max_choices > 1 %}Pick up to {{ group.max_choices }}{% else %}Pick 1{% endif %}
+                                </span>
+                            </div>
+                            <div class="row g-2 pt-1 group-options">
+                                {% for opt in group.options.all %}
+                                    <div class="col-sm-6">
+                                        <label class="d-flex align-items-center p-2 rounded-2 border bg-light option-label cursor-pointer w-100 mb-0">
+                                            {% if group.max_choices > 1 %}
+                                                <input type="checkbox" name="daily_opt_{{ group.id }}" value="{{ opt.name }}" class="form-check-input me-2 mt-0 daily-option-input" data-group="{{ group.name }}">
+                                            {% else %}
+                                                <input type="radio" name="daily_opt_{{ group.id }}" value="{{ opt.name }}" class="form-check-input me-2 mt-0 daily-option-input" data-group="{{ group.name }}">
+                                            {% endif %}
+                                            <span class="small fw-semibold text-dark">{{ opt.name }}</span>
+                                        </label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </form>
+            </div>
+
+            <div class="modal-footer bg-light p-3">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-nutrient rounded-pill px-4 fw-bold" id="saveDailyMealCustomizationBtn">
+                    <i class="fa-solid fa-check me-1"></i> Save Meal Recipe
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // CSRF helper
+    function getCsrfToken() {
+        const input = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (input) return input.value;
+        const cookieValue = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('csrftoken='))
+            ?.split('=')[1];
+        return cookieValue || '';
+    }
+
+    // Toggle Pause/Resume handler
+    const pauseBtn = document.getElementById('togglePauseBtn');
+    if (pauseBtn) {
+        pauseBtn.addEventListener('click', function() {
+            const subId = this.dataset.subId;
+            const btn = this;
+            btn.disabled = true;
+
+            fetch(`/subscriptions/${subId}/toggle-pause/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCsrfToken()
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                btn.disabled = false;
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message || 'Error updating subscription status.');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                btn.disabled = false;
+                alert('Connection error. Please try again.');
+            });
+        });
+    }
+
+    // Daily Customizer Open handler
+    document.querySelectorAll('.open-daily-customizer-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const deliveryId = this.dataset.deliveryId;
+            const deliveryDate = this.dataset.deliveryDate;
+
+            document.getElementById('currentDeliveryId').value = deliveryId;
+            document.getElementById('dailyCustomizerModalTitle').textContent = `Customize Meal for ${deliveryDate}`;
+
+            const modalEl = document.getElementById('dailyMealCustomizerModal');
+            if (modalEl) {
+                const modal = new bootstrap.Modal(modalEl);
+                modal.show();
+            }
+        });
+    });
+
+    // Save Daily Customization handler
+    const saveBtn = document.getElementById('saveDailyMealCustomizationBtn');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', function() {
+            const deliveryId = document.getElementById('currentDeliveryId').value;
+            if (!deliveryId) return;
+
+            const selectedOptions = {};
+            const inputs = document.querySelectorAll('.daily-option-input:checked');
+            inputs.forEach(input => {
+                const gName = input.dataset.group;
+                if (!selectedOptions[gName]) {
+                    selectedOptions[gName] = [];
+                }
+                selectedOptions[gName].push(input.value);
+            });
+
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
+
+            fetch(`/subscriptions/delivery/${deliveryId}/customize/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCsrfToken()
+                },
+                body: JSON.stringify({
+                    customization: {
+                        selected_options: selectedOptions
+                    }
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="fa-solid fa-check me-1"></i> Save Meal Recipe';
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message || 'Error updating meal customization.');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="fa-solid fa-check me-1"></i> Save Meal Recipe';
+                alert('Connection error. Please try again.');
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,257 @@
+{% extends 'base.html' %}
+
+{% block title %}Subscribe to {{ plan.name }} | NUTRIENT / THE SUPER FOOD KITCHEN{% endblock %}
+
+{% block content %}
+<div class="py-2 mb-5">
+    <div class="mb-4">
+        <a href="{% url 'subscriptions:plans' %}" class="text-decoration-none text-muted small fw-semibold">
+            <i class="fa-solid fa-arrow-left me-1"></i> Back to All Plans
+        </a>
+        <h2 class="fw-extrabold text-dark mt-2 mb-1">Set Up Your Subscription</h2>
+        <p class="text-muted small">Configure your delivery schedule, time slot, and default recipe</p>
+    </div>
+
+    <form method="post" id="subscriptionSubscribeForm">
+        {% csrf_token %}
+        <input type="hidden" name="customizations_json" id="customizationsJsonInput" value="{}">
+
+        <div class="row g-4">
+            <!-- Left Column: Settings & Customizer -->
+            <div class="col-lg-8">
+                <!-- 1. Delivery Address -->
+                <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold text-dark mb-0">
+                            <i class="fa-solid fa-location-dot text-success me-2"></i>1. Select Delivery Address
+                        </h5>
+                        <a href="{% url 'accounts:address_create' %}?next={{ request.path }}" class="btn btn-sm btn-outline-success rounded-pill px-3">
+                            <i class="fa-solid fa-plus me-1"></i> Add New Address
+                        </a>
+                    </div>
+
+                    {% if addresses %}
+                        <div class="row g-3">
+                            {% for addr in addresses %}
+                                <div class="col-md-6">
+                                    <label class="d-flex align-items-start p-3 rounded-3 border bg-light option-label cursor-pointer w-100 h-100 mb-0 position-relative {% if addr.is_default %}border-success bg-success-subtle bg-opacity-10{% endif %}">
+                                        <input type="radio" name="address_id" value="{{ addr.id }}" class="form-check-input me-3 mt-1" {% if addr.is_default or forloop.first %}checked{% endif %} required>
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex align-items-center gap-2 mb-1">
+                                                <span class="badge bg-secondary px-2 py-0" style="font-size: 0.65rem;">{{ addr.get_address_type_display }}</span>
+                                                <strong class="small text-dark">{{ addr.contact_name }}</strong>
+                                            </div>
+                                            <p class="small text-secondary mb-1 lh-sm">
+                                                {{ addr.apartment_flat }}{% if addr.apartment_flat %}, {% endif %}{{ addr.street_address }}
+                                            </p>
+                                            <span class="small text-muted d-block" style="font-size: 0.75rem;">
+                                                Landmark: {{ addr.landmark|default:"HITEC City" }} &bull; {{ addr.pincode }}
+                                            </span>
+                                        </div>
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning border-0 p-3 rounded-3 small">
+                            <i class="fa-solid fa-triangle-exclamation me-1"></i> You don't have any saved addresses yet.
+                            <a href="{% url 'accounts:address_create' %}?next={{ request.path }}" class="alert-link fw-bold">Please add a delivery address</a> to proceed.
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- 2. Time Slot & Start Date -->
+                <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
+                    <h5 class="fw-bold text-dark mb-3">
+                        <i class="fa-solid fa-clock text-success me-2"></i>2. Choose Delivery Schedule
+                    </h5>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small text-dark">Daily Delivery Time Slot</label>
+                            <div class="d-flex flex-column gap-2">
+                                <label class="d-flex align-items-center p-3 rounded-3 border bg-light cursor-pointer mb-0">
+                                    <input type="radio" name="time_slot" value="LUNCH" class="form-check-input me-3" checked>
+                                    <div>
+                                        <strong class="d-block small text-dark">Lunch Shift</strong>
+                                        <span class="small text-muted" style="font-size: 0.75rem;">12:30 PM – 01:30 PM (Freshly prepared)</span>
+                                    </div>
+                                </label>
+                                <label class="d-flex align-items-center p-3 rounded-3 border bg-light cursor-pointer mb-0">
+                                    <input type="radio" name="time_slot" value="DINNER" class="form-check-input me-3">
+                                    <div>
+                                        <strong class="d-block small text-dark">Dinner Shift</strong>
+                                        <span class="small text-muted" style="font-size: 0.75rem;">07:30 PM – 08:30 PM (Freshly prepared)</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="startDateInput" class="form-label fw-semibold small text-dark">Subscription Start Date</label>
+                            <input type="date" name="start_date" id="startDateInput" class="form-control" value="{{ default_start_date }}" min="{{ default_start_date }}" required>
+                            <span class="small text-muted mt-1 d-block" style="font-size: 0.75rem;">
+                                Deliveries run for {{ plan.total_bowls }} consecutive days (you can pause or skip days anytime).
+                            </span>
+
+                            <div class="mt-3">
+                                <label for="specialInstructions" class="form-label fw-semibold small text-dark">Delivery Notes (Optional)</label>
+                                <input type="text" name="special_instructions" id="specialInstructions" class="form-control form-control-sm" placeholder="e.g. Leave with reception, call on arrival">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Default Recipe Customizer -->
+                {% if customization_groups %}
+                    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="fw-bold text-dark mb-0">
+                                <i class="fa-solid fa-sliders text-success me-2"></i>3. Configure Default Recipe
+                            </h5>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill small">
+                                Included with Subscription
+                            </span>
+                        </div>
+                        <p class="small text-muted mb-4">
+                            Select your default ingredients for your {{ plan.name }}. You can change individual days in your dashboard later!
+                        </p>
+
+                        <div id="subscriptionCustomizerContainer">
+                            {% for group in customization_groups %}
+                                <div class="card border rounded-3 p-3 mb-3 bg-white shadow-none subscription-group" data-group-name="{{ group.name }}" data-max-choices="{{ group.max_choices }}">
+                                    <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                                        <h6 class="fw-bold mb-0 text-dark">{{ forloop.counter }}. {{ group.name }}</h6>
+                                        <span class="badge bg-secondary-subtle text-secondary px-2 py-0" style="font-size: 0.65rem;">
+                                            {% if group.max_choices > 1 %}Pick up to {{ group.max_choices }}{% else %}Pick 1{% endif %}
+                                        </span>
+                                    </div>
+                                    <div class="row g-2 pt-1 group-options">
+                                        {% for opt in group.options.all %}
+                                            <div class="col-sm-6">
+                                                <label class="d-flex align-items-center p-2 rounded-2 border bg-light option-label cursor-pointer w-100 mb-0">
+                                                    {% if group.max_choices > 1 %}
+                                                        <input type="checkbox" name="sub_opt_{{ group.id }}" value="{{ opt.name }}" class="form-check-input me-2 mt-0 sub-option-input" data-group="{{ group.name }}" {% if forloop.counter <= 2 %}checked{% endif %}>
+                                                    {% else %}
+                                                        <input type="radio" name="sub_opt_{{ group.id }}" value="{{ opt.name }}" class="form-check-input me-2 mt-0 sub-option-input" data-group="{{ group.name }}" {% if forloop.first %}checked{% endif %}>
+                                                    {% endif %}
+                                                    <span class="small fw-semibold text-dark">{{ opt.name }}</span>
+                                                </label>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Right Column: Plan Summary Card -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white sticky-top" style="top: 90px;">
+                    <span class="badge bg-success text-white px-2 py-1 rounded-pill small fw-bold mb-2 align-self-start">
+                        30% DISCOUNT APPLIED
+                    </span>
+                    <h4 class="fw-extrabold text-dark mb-1">{{ plan.name }}</h4>
+                    <span class="text-muted small d-block mb-3">{{ plan.get_duration_display }} ({{ plan.total_bowls }} Meals)</span>
+
+                    <!-- Price breakdown -->
+                    <div class="bg-light p-3 rounded-3 mb-3">
+                        <div class="d-flex justify-content-between text-muted small mb-1">
+                            <span>Standard Retail MRP:</span>
+                            <span class="text-decoration-line-through">₹{{ plan.original_price }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between text-success fw-bold small mb-2">
+                            <span>Launch Discount (30%):</span>
+                            <span>- ₹{{ plan.savings_amount }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-baseline pt-2 border-top">
+                            <span class="fw-bold text-dark">Subscriber Total:</span>
+                            <span class="fs-4 fw-extrabold text-success">₹{{ plan.price }}</span>
+                        </div>
+                        <div class="small text-muted text-end mt-1" style="font-size: 0.75rem;">
+                            Only ₹{{ plan.price_per_bowl }} per bowl
+                        </div>
+                    </div>
+
+                    <!-- Included Perks Checklist -->
+                    <div class="small text-secondary mb-4">
+                        <div class="fw-bold text-dark mb-2">All-Inclusive Benefits:</div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <i class="fa-solid fa-check text-success"></i> 1 Fresh Bowl Daily for {{ plan.total_bowls }} Days
+                        </div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <i class="fa-solid fa-check text-success"></i> Dressing / Raita & Super Drink Included
+                        </div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <i class="fa-solid fa-check text-success"></i> Free 3km Quick Delivery Guaranteed
+                        </div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <i class="fa-solid fa-check text-success"></i> 5% GST Included in Total
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-check text-success"></i> Pause / Reschedule Anytime
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="btn btn-nutrient rounded-pill fw-bold py-3 w-100 shadow-sm" {% if not addresses %}disabled{% endif %}>
+                        <i class="fa-solid fa-check-circle me-2"></i> Confirm & Subscribe (₹{{ plan.price }})
+                    </button>
+                    
+                    <p class="text-center text-muted small mt-3 mb-0" style="font-size: 0.75rem;">
+                        <i class="fa-solid fa-shield-halved text-success me-1"></i> Instant activation upon confirmation
+                    </p>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('subscriptionSubscribeForm');
+    const jsonInput = document.getElementById('customizationsJsonInput');
+
+    // Enforce max choices on multi-select checkboxes
+    document.querySelectorAll('.subscription-group').forEach(groupEl => {
+        const maxChoices = parseInt(groupEl.dataset.maxChoices, 10);
+        if (maxChoices > 1) {
+            const checkboxes = groupEl.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(cb => {
+                cb.addEventListener('change', function() {
+                    const checkedCount = groupEl.querySelectorAll('input[type="checkbox"]:checked').length;
+                    if (checkedCount >= maxChoices) {
+                        checkboxes.forEach(otherCb => {
+                            if (!otherCb.checked) otherCb.disabled = true;
+                        });
+                    } else {
+                        checkboxes.forEach(otherCb => {
+                            otherCb.disabled = false;
+                        });
+                    }
+                });
+            });
+        }
+    });
+
+    // Form submission: build customizations JSON
+    form.addEventListener('submit', function() {
+        const selectedOptions = {};
+        const inputs = document.querySelectorAll('.sub-option-input:checked');
+        inputs.forEach(input => {
+            const gName = input.dataset.group;
+            if (!selectedOptions[gName]) {
+                selectedOptions[gName] = [];
+            }
+            selectedOptions[gName].push(input.value);
+        });
+
+        jsonInput.value = JSON.stringify({
+            selected_options: selectedOptions
+        });
+    });
+});
+</script>
+{% endblock %}

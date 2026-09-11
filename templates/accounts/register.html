@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Account | Nutrient – The Super Food{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5">
+    <div class="col-md-7 col-lg-6">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <div class="bg-dark-navy p-4 text-center text-white">
+                <div class="brand-icon-box bg-success bg-opacity-25 text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 48px; height: 48px;">
+                    <i class="fa-solid fa-seedling fs-4 text-success"></i>
+                </div>
+                <h4 class="fw-bold mb-1">Join the Super Food Movement</h4>
+                <p class="text-white-50 small mb-0">Experience fresh, high-protein nutrition in Hyderabad</p>
+            </div>
+
+            <div class="card-body p-4 p-md-5">
+                <!-- Fast Phone OTP Callout -->
+                <div class="alert alert-success bg-opacity-10 border-success border-opacity-25 p-3 rounded-3 mb-4 d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fa-solid fa-mobile-screen-button text-success fs-4"></i>
+                        <div>
+                            <div class="fw-bold text-success small">Prefer No Passwords?</div>
+                            <div class="text-muted small">Sign in instantly using 1-click Phone Number OTP.</div>
+                        </div>
+                    </div>
+                    <a href="{% url 'accounts:login' %}" class="btn btn-sm btn-outline-success fw-bold text-nowrap rounded-pill">
+                        <i class="fa-solid fa-bolt me-1"></i>Use OTP
+                    </a>
+                </div>
+
+                <form method="post" action="{% url 'accounts:register' %}">
+                    {% csrf_token %}
+                    {% if request.GET.next %}
+                        <input type="hidden" name="next" value="{{ request.GET.next }}">
+                    {% endif %}
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-semibold text-muted">First Name <span class="text-danger">*</span></label>
+                            {{ form.first_name }}
+                            {% if form.first_name.errors %}
+                                <div class="text-danger small mt-1">{{ form.first_name.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-semibold text-muted">Last Name</label>
+                            {{ form.last_name }}
+                            {% if form.last_name.errors %}
+                                <div class="text-danger small mt-1">{{ form.last_name.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted">Username <span class="text-danger">*</span></label>
+                        {{ form.username }}
+                        {% if form.username.errors %}
+                            <div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-semibold text-muted">Email Address <span class="text-danger">*</span></label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                                <div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-semibold text-muted">Phone / WhatsApp <span class="text-danger">*</span></label>
+                            {{ form.phone }}
+                            {% if form.phone.errors %}
+                                <div class="text-danger small mt-1">{{ form.phone.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-semibold text-muted">Password <span class="text-danger">*</span></label>
+                            {{ form.password1 }}
+                            {% if form.password1.errors %}
+                                <div class="text-danger small mt-1">{{ form.password1.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-semibold text-muted">Confirm Password <span class="text-danger">*</span></label>
+                            {{ form.password2 }}
+                            {% if form.password2.errors %}
+                                <div class="text-danger small mt-1">{{ form.password2.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger py-2 small mb-3">
+                            {{ form.non_field_errors.0 }}
+                        </div>
+                    {% endif %}
+
+                    <button type="submit" class="btn btn-nutrient w-100 py-2 rounded-3 shadow-sm fw-bold">
+                        <i class="fa-solid fa-user-plus me-2"></i>Create Account
+                    </button>
+                </form>
+
+                <hr class="my-4">
+
+                <div class="text-center small">
+                    <span class="text-muted">Already have an account?</span>
+                    <a href="{% url 'accounts:login' %}" class="text-success fw-bold text-decoration-none ms-1">
+                        Log In
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

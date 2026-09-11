@@ -1,0 +1,356 @@
+{% extends 'base.html' %}
+
+{% block title %}WhatsApp Automation & Menu Dispatcher | Nutrient – The Super Food{% endblock %}
+
+{% block extra_css %}
+<style>
+    .wa-chat-frame {
+        background-color: #E5DDD5;
+        background-image: radial-gradient(#d4c5b9 1px, transparent 1px);
+        background-size: 16px 16px;
+        border-radius: 1rem;
+        overflow: hidden;
+    }
+    .wa-chat-header {
+        background-color: #075E54;
+        color: #ffffff;
+        padding: 0.75rem 1rem;
+    }
+    .wa-bubble {
+        background-color: #ffffff;
+        border-radius: 0.75rem 0.75rem 0.75rem 0.2rem;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.13);
+        max-width: 95%;
+        padding: 0.85rem 1rem;
+        font-size: 0.875rem;
+        white-space: pre-wrap;
+        word-break: break-word;
+        line-height: 1.5;
+        position: relative;
+    }
+    .wa-time {
+        font-size: 0.7rem;
+        color: #8c8c8c;
+        float: right;
+        margin-top: 0.5rem;
+        margin-left: 0.5rem;
+    }
+    .variable-pill {
+        cursor: pointer;
+        transition: transform 0.1s, background-color 0.15s;
+    }
+    .variable-pill:hover {
+        transform: translateY(-1px);
+        background-color: #d1e7dd !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="py-4">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-success bg-opacity-10 text-success fs-6 p-2 rounded-3">
+                    <i class="fa-brands fa-whatsapp fs-4"></i>
+                </span>
+                <h3 class="fw-bold text-dark mb-0">WhatsApp Automation & Welcome Dispatcher</h3>
+            </div>
+            <p class="text-muted small mb-0">
+                Automatically send live 30% discount menus and subscription pricing to customers on registration.
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'restaurant:meal_whatsapp_dashboard' %}" class="btn btn-nutrient rounded-pill btn-sm shadow-sm">
+                <i class="fa-solid fa-calendar-day me-1"></i> Daily Every-Meal Alerts
+            </a>
+            <a href="{% url 'restaurant:dashboard' %}" class="btn btn-outline-secondary rounded-pill btn-sm">
+                <i class="fa-solid fa-arrow-left me-1"></i> Kitchen Dashboard
+            </a>
+            <a href="{% url 'menu:admin_food_list' %}" class="btn btn-outline-success rounded-pill btn-sm">
+                <i class="fa-solid fa-utensils me-1"></i> Live Menu Editor
+            </a>
+        </div>
+    </div>
+
+    <!-- Quick Status Bar -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small fw-semibold">Auto-Send Status</div>
+                        <div class="fs-5 fw-bold mt-1">
+                            {% if template.is_active %}
+                                <span class="text-success"><i class="fa-solid fa-circle-check me-1"></i> Active (Enabled)</span>
+                            {% else %}
+                                <span class="text-danger"><i class="fa-solid fa-circle-xmark me-1"></i> Inactive (Paused)</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <span class="badge bg-success bg-opacity-10 text-success p-3 rounded-circle">
+                        <i class="fa-solid fa-power-off fs-4"></i>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small fw-semibold">Total Dispatched Messages</div>
+                        <div class="fs-4 fw-bold text-dark mt-1">{{ total_dispatched }}</div>
+                    </div>
+                    <span class="badge bg-primary bg-opacity-10 text-primary p-3 rounded-circle">
+                        <i class="fa-solid fa-paper-plane fs-4"></i>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small fw-semibold">Discount Represented</div>
+                        <div class="fs-5 fw-bold text-success mt-1">30% OFF Daily & Plans</div>
+                    </div>
+                    <span class="badge bg-warning bg-opacity-10 text-warning p-3 rounded-circle">
+                        <i class="fa-solid fa-tags fs-4"></i>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- ========================================== -->
+        <!-- LEFT COLUMN: TEMPLATE EDITOR -->
+        <!-- ========================================== -->
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white mb-4">
+                <h5 class="fw-bold text-dark mb-3">
+                    <i class="fa-solid fa-pen-to-square text-success me-2"></i>Customize Welcome Message Template
+                </h5>
+                <p class="text-muted small mb-4">
+                    The template below is sent automatically to newly registered customers. You can use dynamic merge tags to automatically pull today's active menu items and current subscription rates.
+                </p>
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted">Template Title</label>
+                        {{ form.title }}
+                    </div>
+
+                    <!-- Switches -->
+                    <div class="bg-light p-3 rounded-3 mb-3 border">
+                        <div class="form-check form-switch mb-2">
+                            {{ form.is_active }}
+                            <label class="form-check-label fw-bold text-dark" for="{{ form.is_active.id_for_label }}">
+                                Automatically send WhatsApp welcome message when a new customer signs up
+                            </label>
+                            <div class="small text-muted">Triggers on both Phone Number OTP sign-in and standard registration.</div>
+                        </div>
+
+                        <div class="row g-2 mt-2 pt-2 border-top">
+                            <div class="col-sm-6">
+                                <div class="form-check">
+                                    {{ form.include_live_menu }}
+                                    <label class="form-check-label small fw-semibold" for="{{ form.include_live_menu.id_for_label }}">
+                                        Include Live Menu & 30% OFF Prices
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="form-check">
+                                    {{ form.include_subscriptions }}
+                                    <label class="form-check-label small fw-semibold" for="{{ form.include_subscriptions.id_for_label }}">
+                                        Include Weekly & Monthly Subscriptions
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Variable Pills -->
+                    <div class="mb-2">
+                        <label class="form-label small fw-semibold text-muted d-block">Insert Dynamic Placeholders (Click to insert):</label>
+                        <div class="d-flex flex-wrap gap-2">
+                            <span class="badge bg-light text-success border border-success border-opacity-25 p-2 rounded-2 variable-pill" onclick="insertTag('{customer_name}')">
+                                + {customer_name}
+                            </span>
+                            <span class="badge bg-light text-success border border-success border-opacity-25 p-2 rounded-2 variable-pill" onclick="insertTag('{menu_items}')">
+                                + {menu_items} (Live 30% OFF items)
+                            </span>
+                            <span class="badge bg-light text-success border border-success border-opacity-25 p-2 rounded-2 variable-pill" onclick="insertTag('{subscription_plans}')">
+                                + {subscription_plans} (Weekly/Monthly)
+                            </span>
+                            <span class="badge bg-light text-success border border-success border-opacity-25 p-2 rounded-2 variable-pill" onclick="insertTag('{order_link}')">
+                                + {order_link}
+                            </span>
+                            <span class="badge bg-light text-success border border-success border-opacity-25 p-2 rounded-2 variable-pill" onclick="insertTag('{kitchen_phone}')">
+                                + {kitchen_phone}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Message Body Textarea -->
+                    <div class="mb-4">
+                        <label class="form-label small fw-semibold text-muted">Message Template Body</label>
+                        {{ form.body_text }}
+                        <div class="form-text small text-muted">
+                            WhatsApp formatting supported: <code>*bold*</code>, <code>~strikethrough~</code>, <code>_italic_</code>.
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-nutrient px-4 py-2 rounded-pill fw-bold shadow-sm">
+                        <i class="fa-solid fa-floppy-disk me-2"></i>Save WhatsApp Template
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- RIGHT COLUMN: LIVE PREVIEW & TEST SEND -->
+        <!-- ========================================== -->
+        <div class="col-lg-5">
+            <!-- WhatsApp Preview Mockup -->
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+                <div class="card-header bg-white border-bottom p-3">
+                    <h6 class="fw-bold text-dark mb-0">
+                        <i class="fa-brands fa-whatsapp text-success me-2"></i>Real-time Message Preview
+                    </h6>
+                    <small class="text-muted">Shows how the customer will see this message on their phone</small>
+                </div>
+
+                <div class="card-body p-3 wa-chat-frame">
+                    <div class="wa-chat-header rounded-3 mb-3 d-flex align-items-center gap-2">
+                        <div class="rounded-circle bg-white text-success d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                            <i class="fa-solid fa-leaf"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold small">{{ profile.name }}</div>
+                            <div class="text-white-50" style="font-size: 0.68rem;">Official WhatsApp Verified Business</div>
+                        </div>
+                    </div>
+
+                    <div class="wa-bubble mb-2">
+                        <div>{{ live_preview|linebreaksbr }}</div>
+                        <div class="wa-time">
+                            Just now <i class="fa-solid fa-check-double text-primary ms-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Instant Test Dispatch Box -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+                <h6 class="fw-bold text-dark mb-2">
+                    <i class="fa-solid fa-paper-plane text-primary me-2"></i>Send Instant Test Message
+                </h6>
+                <p class="text-muted small mb-3">
+                    Test the live template with your own WhatsApp number. You'll receive a 1-click WhatsApp Web / App link to preview the formatted message.
+                </p>
+
+                <form method="post" action="{% url 'restaurant:whatsapp_send_test' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted">Recipient Mobile Number</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">🇮🇳 +91</span>
+                            <input type="tel" name="recipient_phone" class="form-control" placeholder="9876543210" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-outline-success w-100 py-2 rounded-pill fw-bold">
+                        <i class="fa-brands fa-whatsapp me-2"></i>Dispatch Test WhatsApp
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- AUDIT DISPATCH HISTORY -->
+    <!-- ========================================== -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mt-2 bg-white">
+        <div class="card-header bg-white border-bottom p-3 d-flex justify-content-between align-items-center">
+            <h6 class="fw-bold text-dark mb-0">
+                <i class="fa-solid fa-clock-rotate-left text-secondary me-2"></i>Recent Dispatched Notifications Log
+            </h6>
+            <span class="badge bg-light text-secondary fw-normal">Showing recent 50 logs</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table align-middle table-hover mb-0">
+                <thead class="table-light small">
+                    <tr>
+                        <th class="ps-3">Recipient Phone</th>
+                        <th>Customer</th>
+                        <th>Sent Timestamp</th>
+                        <th>Status</th>
+                        <th>Message Preview</th>
+                        <th class="pe-3 text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="small">
+                    {% for log in logs %}
+                    <tr>
+                        <td class="ps-3 fw-bold text-dark">
+                            <i class="fa-brands fa-whatsapp text-success me-1"></i>{{ log.recipient_phone }}
+                        </td>
+                        <td>
+                            {% if log.customer %}
+                                <a href="mailto:{{ log.customer.email }}" class="text-decoration-none fw-semibold text-dark">
+                                    {{ log.customer.get_display_name }}
+                                </a>
+                            {% else %}
+                                <span class="text-muted">Guest / Direct</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-muted">{{ log.sent_at|date:"d M Y, h:i A" }}</td>
+                        <td>
+                            <span class="badge bg-success bg-opacity-10 text-success">
+                                <i class="fa-solid fa-check me-1"></i>{{ log.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="text-truncate d-inline-block" style="max-width: 250px;" title="{{ log.message_text }}">
+                                {{ log.message_text|truncatechars:60 }}
+                            </span>
+                        </td>
+                        <td class="pe-3 text-end">
+                            <a href="{{ log.wa_web_link }}" target="_blank" class="btn btn-xs btn-success rounded-pill px-3 py-1 text-nowrap">
+                                <i class="fa-brands fa-whatsapp me-1"></i> Open Web
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">
+                            <i class="fa-regular fa-comment-dots fs-3 d-block mb-2 text-muted"></i>
+                            No WhatsApp notifications dispatched yet. As soon as a customer registers or signs in with OTP, dispatch logs will appear here.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    function insertTag(tag) {
+        const textarea = document.getElementById('{{ form.body_text.id_for_label }}');
+        if (!textarea) return;
+
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const text = textarea.value;
+
+        textarea.value = text.substring(0, start) + tag + text.substring(end);
+        textarea.focus();
+        textarea.selectionStart = textarea.selectionEnd = start + tag.length;
+    }
+</script>
+{% endblock %}

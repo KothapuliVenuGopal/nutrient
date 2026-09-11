@@ -1,0 +1,301 @@
+{% extends 'base.html' %}
+
+{% block title %}Track Order #{{ order.order_number }} | Nutrient – The Super Food{% endblock %}
+
+{% block content %}
+<div class="py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <a href="{% url 'orders:order_list' %}" class="btn btn-outline-secondary btn-sm rounded-pill">
+            <i class="fa-solid fa-arrow-left me-1"></i> Back to Orders
+        </a>
+        
+        {% if order.status == 'PENDING' %}
+            <button type="button" class="btn btn-outline-danger btn-sm rounded-pill" data-bs-toggle="modal" data-bs-target="#cancelOrderModal">
+                <i class="fa-solid fa-xmark me-1"></i> Cancel Order
+            </button>
+        {% endif %}
+    </div>
+
+    <!-- Live Status Stepper Card -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white mb-4 position-relative overflow-hidden">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-3 border-bottom gap-2">
+            <div>
+                <span class="badge bg-success-subtle text-success px-3 py-1 rounded-pill mb-1" id="order-status-badge">
+                    {{ order.get_status_display }}
+                </span>
+                <h3 class="fw-bold text-dark mb-0">Order #{{ order.order_number }}</h3>
+                <small class="text-muted">Placed on {{ order.created_at|date:"F d, Y at h:i A" }}</small>
+            </div>
+            <div class="text-md-end">
+                <span class="fs-4 fw-extrabold text-success">₹{{ order.total_amount }}</span>
+                <div class="small text-muted">{{ order.payment.get_payment_method_display }} &bull; <span class="badge {% if order.payment.is_paid %}bg-success{% else %}bg-warning text-dark{% endif %}">{{ order.payment.get_status_display }}</span></div>
+            </div>
+        </div>
+
+        <!-- 6-Stage State Machine Visual Stepper -->
+        <div id="stepper-wrapper" {% if order.status == 'CANCELLED' %}class="d-none"{% endif %}>
+            <div class="row g-2 text-center my-3 py-2 position-relative">
+                <!-- Step 1: Placed -->
+                <div class="col-sm-2 col-4 mb-3">
+                    <div class="rounded-circle mx-auto mb-2 d-flex align-items-center justify-content-center bg-success text-white step-circle" id="step-circle-pending" style="width: 44px; height: 44px;">
+                        <i class="fa-solid fa-check"></i>
+                    </div>
+                    <strong class="d-block small text-dark">Placed</strong>
+                    <small class="text-muted" id="time-pending" style="font-size: 0.7rem;">{{ order.created_at|date:"h:i A" }}</small>
+                </div>
+
+                <!-- Step 2: Confirmed -->
+                <div class="col-sm-2 col-4 mb-3">
+                    <div class="rounded-circle mx-auto mb-2 d-flex align-items-center justify-content-center {% if order.status in 'CONFIRMED PREPARING READY_FOR_PICKUP OUT_FOR_DELIVERY DELIVERED' %}bg-success text-white{% else %}bg-light text-muted border{% endif %} step-circle" id="step-circle-confirmed" style="width: 44px; height: 44px;">
+                        <i class="fa-solid fa-kitchen-set"></i>
+                    </div>
+                    <strong class="d-block small text-dark">Confirmed</strong>
+                    <small class="text-muted" id="time-confirmed" style="font-size: 0.7rem;">{{ order.confirmed_at|date:"h:i A"|default:'Pending' }}</small>
+                </div>
+
+                <!-- Step 3: Preparing -->
+                <div class="col-sm-2 col-4 mb-3">
+                    <div class="rounded-circle mx-auto mb-2 d-flex align-items-center justify-content-center {% if order.status in 'PREPARING READY_FOR_PICKUP OUT_FOR_DELIVERY DELIVERED' %}bg-success text-white{% else %}bg-light text-muted border{% endif %} step-circle" id="step-circle-preparing" style="width: 44px; height: 44px;">
+                        <i class="fa-solid fa-fire-burner"></i>
+                    </div>
+                    <strong class="d-block small text-dark">In Kitchen</strong>
+                    <small class="text-muted" id="time-preparing" style="font-size: 0.7rem;">{{ order.prepared_at|date:"h:i A"|default:'Cooking' }}</small>
+                </div>
+
+                <!-- Step 4: Ready -->
+                <div class="col-sm-2 col-4 mb-3">
+                    <div class="rounded-circle mx-auto mb-2 d-flex align-items-center justify-content-center {% if order.status in 'READY_FOR_PICKUP OUT_FOR_DELIVERY DELIVERED' %}bg-success text-white{% else %}bg-light text-muted border{% endif %} step-circle" id="step-circle-ready" style="width: 44px; height: 44px;">
+                        <i class="fa-solid fa-box"></i>
+                    </div>
+                    <strong class="d-block small text-dark">Packed</strong>
+                    <small class="text-muted" id="time-ready" style="font-size: 0.7rem;">Ready for pickup</small>
+                </div>
+
+                <!-- Step 5: Out for Delivery -->
+                <div class="col-sm-2 col-4 mb-3">
+                    <div class="rounded-circle mx-auto mb-2 d-flex align-items-center justify-content-center {% if order.status in 'OUT_FOR_DELIVERY DELIVERED' %}bg-success text-white{% else %}bg-light text-muted border{% endif %} step-circle" id="step-circle-out" style="width: 44px; height: 44px;">
+                        <i class="fa-solid fa-motorcycle"></i>
+                    </div>
+                    <strong class="d-block small text-dark">Out for Delivery</strong>
+                    <small class="text-muted" id="time-out" style="font-size: 0.7rem;">{{ order.picked_up_at|date:"h:i A"|default:'Dispatched' }}</small>
+                </div>
+
+                <!-- Step 6: Delivered -->
+                <div class="col-sm-2 col-4 mb-3">
+                    <div class="rounded-circle mx-auto mb-2 d-flex align-items-center justify-content-center {% if order.status == 'DELIVERED' %}bg-success text-white{% else %}bg-light text-muted border{% endif %} step-circle" id="step-circle-delivered" style="width: 44px; height: 44px;">
+                        <i class="fa-solid fa-house-chimney"></i>
+                    </div>
+                    <strong class="d-block small text-dark">Delivered</strong>
+                    <small class="text-muted" id="time-delivered" style="font-size: 0.7rem;">{{ order.delivered_at|date:"h:i A"|default:'~30 mins' }}</small>
+                </div>
+            </div>
+        </div>
+
+        <div id="cancelled-alert" class="alert alert-danger py-3 mb-0 {% if order.status != 'CANCELLED' %}d-none{% endif %}">
+            <i class="fa-solid fa-ban me-2"></i> This order was cancelled. Reason: <strong>{{ order.cancellation_reason|default:'Customer cancelled' }}</strong>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Left Column: Items & Nutrition -->
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+                <h5 class="fw-bold text-dark mb-3">Super Food In This Order</h5>
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead class="table-light small">
+                            <tr>
+                                <th>Item</th>
+                                <th>Price</th>
+                                <th>Qty</th>
+                                <th class="text-end">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in order.items.all %}
+                                <tr>
+                                    <td>
+                                        <strong class="text-dark d-block">{{ item.food_name }}</strong>
+                                        <small class="text-success">{{ item.protein_grams }}g Protein &bull; {{ item.calories }} kcal</small>
+                                        {% if item.customization_summary %}
+                                            <div class="mt-1 d-flex flex-wrap gap-1 mb-1">
+                                                {% for line in item.customization_summary %}
+                                                    <span class="badge bg-light text-dark border px-2 py-0" style="font-size: 0.7rem;">
+                                                        <i class="fa-solid fa-check text-success me-1"></i>{{ line }}
+                                                    </span>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                        {% if order.status == 'DELIVERED' and item.food_item %}
+                                            <div class="mt-1">
+                                                <a href="{% url 'menu:food_detail' item.food_item.slug %}" class="btn btn-sm btn-outline-success rounded-pill px-2 py-0" style="font-size: 0.72rem;">
+                                                    <i class="fa-solid fa-star text-warning me-1"></i> Rate this Dish
+                                                </a>
+                                            </div>
+                                        {% endif %}
+                                        {% if item.special_instructions %}
+                                            <div class="text-muted small fst-italic mt-1"><i class="fa-regular fa-comment-dots me-1 text-muted"></i>{{ item.special_instructions }}</div>
+                                        {% endif %}
+                                    </td>
+                                    <td>₹{{ item.unit_price }}</td>
+                                    <td><strong>{{ item.quantity }}</strong></td>
+                                    <td class="text-end"><strong>₹{{ item.subtotal }}</strong></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Nutrition Aggregate Pill -->
+                <div class="p-3 bg-dark-navy text-white rounded-4 mt-3 small d-flex justify-content-around text-center">
+                    <div>
+                        <span class="text-white-50 d-block" style="font-size: 0.7rem;">TOTAL PURE PROTEIN</span>
+                        <strong class="text-success fs-5">{{ order.total_protein }}g</strong>
+                    </div>
+                    <div class="border-start border-secondary border-opacity-50 ps-3">
+                        <span class="text-white-50 d-block" style="font-size: 0.7rem;">TOTAL CALORIC ENERGY</span>
+                        <strong class="text-white fs-5">{{ order.total_calories }} kcal</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Delivery Partner, Handover OTP & Receipt -->
+        <div class="col-lg-5">
+            <!-- Delivery Verification OTP Card -->
+            {% if delivery_assignment %}
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4 border-start border-4 border-success">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <span class="badge bg-success-subtle text-success small mb-1">Handover Verification</span>
+                            <h6 class="fw-bold text-dark mb-0">Delivery OTP Code</h6>
+                        </div>
+                        <span class="fs-4 fw-extrabold text-success tracking-wider bg-light px-3 py-1 rounded-3">
+                            {{ delivery_assignment.delivery_otp }}
+                        </span>
+                    </div>
+                    <small class="text-muted">
+                        Please share this 4-digit OTP with your delivery rider upon receiving your meal.
+                    </small>
+
+                    <hr class="my-3">
+
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="brand-icon-box bg-light text-success rounded-circle d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                            <i class="fa-solid fa-motorcycle fs-5"></i>
+                        </div>
+                        <div>
+                            <strong class="text-dark d-block">{{ delivery_assignment.delivery_partner.user.get_display_name }}</strong>
+                            <small class="text-muted">{{ delivery_assignment.delivery_partner.vehicle_number }} &bull; {{ delivery_assignment.delivery_partner.get_vehicle_type_display }}</small>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Delivery Address Card -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+                <h6 class="fw-bold text-dark small text-uppercase tracking-wider mb-3">Delivery Destination</h6>
+                <p class="small text-secondary mb-2 lh-base">
+                    <strong class="text-dark">{{ order.delivery_name }}</strong><br>
+                    {{ order.delivery_address }}<br>
+                    {% if order.delivery_landmark %}Landmark: {{ order.delivery_landmark }}<br>{% endif %}
+                    Hyderabad &bull; Pincode: {{ order.delivery_pincode }}
+                </p>
+                <div class="small text-muted">
+                    <i class="fa-solid fa-phone me-1 text-success"></i>{{ order.delivery_phone }}
+                </div>
+                {% if order.customer_notes %}
+                    <div class="p-2 bg-light rounded-3 small mt-3">
+                        <strong class="text-dark">Special Note:</strong> {{ order.customer_notes }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Financial Receipt -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+                <h6 class="fw-bold text-dark small text-uppercase tracking-wider mb-3">Billing Summary</h6>
+                <ul class="list-group list-group-flush small">
+                    <li class="list-group-item d-flex justify-content-between px-0 bg-transparent">
+                        <span class="text-muted">Item Subtotal</span>
+                        <strong>₹{{ order.subtotal }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0 bg-transparent">
+                        <span class="text-muted">GST Tax</span>
+                        <span>₹{{ order.tax_amount }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0 bg-transparent">
+                        <span class="text-muted">Delivery Fee</span>
+                        <span>{% if order.delivery_fee == 0 %}<span class="badge bg-success-subtle text-success">FREE</span>{% else %}₹{{ order.delivery_fee }}{% endif %}</span>
+                    </li>
+                    {% if order.discount_amount > 0 %}
+                        <li class="list-group-item d-flex justify-content-between px-0 bg-transparent text-success">
+                            <span>Promo Discount ({{ order.coupon_code }})</span>
+                            <strong>-₹{{ order.discount_amount }}</strong>
+                        </li>
+                    {% endif %}
+                    <li class="list-group-item d-flex justify-content-between px-0 pt-3 border-top border-2 bg-transparent">
+                        <span class="fw-bold text-dark">Total Amount</span>
+                        <strong class="fs-5 text-success">₹{{ order.total_amount }}</strong>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Customer Cancellation Modal -->
+{% if order.status == 'PENDING' %}
+<div class="modal fade" id="cancelOrderModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow rounded-4">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-dark">Cancel Order?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'orders:customer_cancel_order' order.order_number %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <p class="text-secondary small">
+                        Are you sure you want to cancel order <strong>#{{ order.order_number }}</strong>? Once the kitchen begins preparation, cancellation cannot be accommodated.
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted">Reason for cancellation</label>
+                        <select name="reason" class="form-select form-select-sm">
+                            <option value="Ordered by mistake">Ordered by mistake</option>
+                            <option value="Need to change delivery address">Need to change delivery address</option>
+                            <option value="Need to change menu items">Need to change menu items</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light btn-sm rounded-pill px-3" data-bs-dismiss="modal">Keep Order</button>
+                    <button type="submit" class="btn btn-danger btn-sm rounded-pill px-3">Confirm Cancellation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Live Auto-Polling Script -->
+<script>
+const currentStatus = "{{ order.status }}";
+const orderNumber = "{{ order.order_number }}";
+
+// Poll status every 6 seconds if active
+if (currentStatus !== 'DELIVERED' && currentStatus !== 'CANCELLED') {
+    const pollInterval = setInterval(() => {
+        fetch(`/orders/api/tracking/${orderNumber}/`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.status && data.status !== currentStatus) {
+                // Status changed! Refresh page to update progress stepper and timestamps
+                window.location.reload();
+            }
+        })
+        .catch(err => console.error("Tracking poll error:", err));
+    }, 6000);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}Order Confirmed | Nutrient – The Super Food{% endblock %}
+
+{% block content %}
+<div class="py-5 text-center">
+    <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white mx-auto" style="max-width: 650px;">
+        <div class="brand-icon-box bg-success bg-opacity-10 text-success rounded-circle d-inline-flex align-items-center justify-content-center mx-auto mb-3" style="width: 80px; height: 80px;">
+            <i class="fa-solid fa-circle-check fs-1 text-success"></i>
+        </div>
+
+        <span class="badge bg-success-subtle text-success px-3 py-1 rounded-pill mb-2">Order Confirmed</span>
+        <h2 class="fw-extrabold text-dark mb-1">Thank You For Eating Clean!</h2>
+        <p class="text-muted small mb-4">
+            Your super food order has been sent to our central kitchen in Hyderabad.
+        </p>
+
+        <!-- Order Summary Card -->
+        <div class="p-3 bg-light rounded-4 text-start mb-4">
+            <div class="d-flex justify-content-between align-items-center pb-2 border-bottom mb-2">
+                <span class="small text-muted">Order Identifier</span>
+                <strong class="text-dark">{{ order.order_number }}</strong>
+            </div>
+            <div class="d-flex justify-content-between align-items-center pb-2 border-bottom mb-2">
+                <span class="small text-muted">Payment Status</span>
+                <span class="badge {% if order.payment.is_paid %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                    {{ order.payment.get_payment_method_display }} ({{ order.payment.get_status_display }})
+                </span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center pb-2 border-bottom mb-2">
+                <span class="small text-muted">Total Amount</span>
+                <strong class="fs-5 text-success">₹{{ order.total_amount }}</strong>
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="small text-muted">Delivery To</span>
+                <span class="small text-dark text-end" style="max-width: 250px;">{{ order.delivery_name }}, {{ order.delivery_address|truncatewords:6 }}</span>
+            </div>
+        </div>
+
+        <!-- Nutrition Summary -->
+        <div class="p-3 bg-dark-navy text-white rounded-4 mb-4 small d-flex justify-content-around text-center">
+            <div>
+                <span class="text-white-50 d-block" style="font-size: 0.7rem;">PURE PROTEIN</span>
+                <strong class="text-success fs-5">{{ order.total_protein }}g</strong>
+            </div>
+            <div class="border-start border-secondary border-opacity-50 ps-3">
+                <span class="text-white-50 d-block" style="font-size: 0.7rem;">TOTAL CALORIES</span>
+                <strong class="text-white fs-5">{{ order.total_calories }} kcal</strong>
+            </div>
+        </div>
+
+        <div class="d-flex flex-column flex-sm-row justify-content-center gap-2">
+            <a href="{% url 'orders:order_detail' order.order_number %}" class="btn btn-nutrient rounded-pill px-4 py-2 fw-bold shadow-sm">
+                <i class="fa-solid fa-location-crosshairs me-2"></i>Track Live Order
+            </a>
+            <a href="{% url 'menu:food_list' %}" class="btn btn-outline-secondary rounded-pill px-4 py-2">
+                Back to Menu
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

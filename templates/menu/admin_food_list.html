@@ -1,0 +1,464 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Menu Items | Nutrient – The Super Food{% endblock %}
+
+{% block content %}
+<div class="py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+        <div>
+            <h3 class="fw-bold text-dark mb-1">Super Food Dishes & Items</h3>
+            <p class="text-muted small mb-0">Live menu inventory, instant stock toggles and macro tracking</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'restaurant:dashboard' %}" class="btn btn-outline-secondary rounded-pill btn-sm">
+                <i class="fa-solid fa-arrow-left me-1"></i> Dashboard
+            </a>
+            <!-- Instant Quick Add Dish Modal Trigger -->
+            <button type="button" class="btn btn-nutrient rounded-pill btn-sm px-3 shadow-sm fw-bold" data-bs-toggle="modal" data-bs-target="#quickAddDishModal">
+                <i class="fa-solid fa-bolt me-1"></i> + Quick Add Dish
+            </button>
+            <a href="{% url 'menu:admin_food_create' %}" class="btn btn-light rounded-pill btn-sm px-3 border" title="Advanced full dish form">
+                <i class="fa-solid fa-sliders me-1"></i> Full Form
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter & Search Bar -->
+    <div class="card border-0 shadow-sm rounded-4 p-3 mb-4 bg-white">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-md-4">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                    <input type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="Search dish name or ingredient...">
+                </div>
+            </div>
+            <div class="col-sm-6 col-md-3">
+                <select name="category" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">All Categories</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat.id }}" {% if selected_category == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-sm-3 col-md-2">
+                <select name="type" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">All Diet Types</option>
+                    <option value="VEG" {% if selected_type == 'VEG' %}selected{% endif %}>Vegetarian</option>
+                    <option value="NON_VEG" {% if selected_type == 'NON_VEG' %}selected{% endif %}>Non-Vegetarian</option>
+                    <option value="VEGAN" {% if selected_type == 'VEGAN' %}selected{% endif %}>Vegan</option>
+                </select>
+            </div>
+            <div class="col-sm-3 col-md-2">
+                <select name="available" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">All Stock</option>
+                    <option value="1" {% if selected_availability == '1' %}selected{% endif %}>In Stock</option>
+                    <option value="0" {% if selected_availability == '0' %}selected{% endif %}>Sold Out</option>
+                </select>
+            </div>
+            <div class="col-md-1 d-flex gap-1">
+                <button type="submit" class="btn btn-sm btn-dark-navy rounded-pill w-100">Filter</button>
+                {% if search_query or selected_category or selected_type or selected_availability %}
+                    <a href="{% url 'menu:admin_food_list' %}" class="btn btn-sm btn-light rounded-pill" title="Clear Filters"><i class="fa-solid fa-xmark"></i></a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Dishes Table -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+        {% if items %}
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead class="table-light small">
+                        <tr>
+                            <th style="width: 25%;">Dish / Category</th>
+                            <th style="width: 10%;">Diet</th>
+                            <th style="width: 20%;">Meal Slots (Timing)</th>
+                            <th style="width: 13%;">Price (₹)</th>
+                            <th style="width: 12%;">Macros (P / C / F)</th>
+                            <th style="width: 10%;" class="text-center">Kitchen Stock</th>
+                            <th style="width: 10%;" class="text-center">Auto-Timing</th>
+                            <th style="width: 8%;" class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                            <tr id="item-row-{{ item.id }}" class="{% if not item.is_available %}bg-light bg-opacity-50{% endif %}">
+                                <td>
+                                    <div class="d-flex align-items-center gap-3">
+                                        {% if item.image %}
+                                            <img src="{{ item.image.url }}" class="rounded-3 shadow-sm" width="46" height="46" style="object-fit: cover;">
+                                        {% else %}
+                                            <div class="bg-light rounded-3 d-flex align-items-center justify-content-center text-success border" style="width: 46px; height: 46px;">
+                                                <i class="fa-solid fa-bowl-food fs-5"></i>
+                                            </div>
+                                        {% endif %}
+                                        <div>
+                                            <strong class="text-dark d-block">{{ item.name }}</strong>
+                                            <span class="badge bg-light text-muted border" style="font-size: 0.68rem;">{{ item.category.name }}</span>
+                                            {% if item.is_bestseller %}
+                                                <span class="badge bg-warning-subtle text-warning-emphasis" style="font-size: 0.65rem;">Bestseller</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge {% if item.food_type == 'VEG' %}bg-success{% elif item.food_type == 'NON_VEG' %}bg-danger{% else %}bg-warning text-dark{% endif %} px-2 py-1 rounded-pill" style="font-size: 0.72rem;">
+                                        {{ item.get_food_type_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <!-- Meal Slot Badges -->
+                                    <div class="d-flex flex-wrap gap-1">
+                                        {% if 'ALL_DAY' in item.available_slots or not item.available_slots %}
+                                            <span class="badge bg-info-subtle text-info-emphasis px-2 py-1 rounded-pill" style="font-size: 0.65rem;">
+                                                All Day
+                                            </span>
+                                        {% else %}
+                                            {% if 'BREAKFAST' in item.available_slots %}
+                                                <span class="badge bg-warning-subtle text-warning-emphasis px-2 py-1 rounded-pill" style="font-size: 0.65rem;">
+                                                    Breakfast
+                                                </span>
+                                            {% endif %}
+                                            {% if 'LUNCH' in item.available_slots %}
+                                                <span class="badge bg-primary-subtle text-primary-emphasis px-2 py-1 rounded-pill" style="font-size: 0.65rem;">
+                                                    Lunch
+                                                </span>
+                                            {% endif %}
+                                            {% if 'SNACK' in item.available_slots %}
+                                                <span class="badge bg-success-subtle text-success-emphasis px-2 py-1 rounded-pill" style="font-size: 0.65rem;">
+                                                    Snack
+                                                </span>
+                                            {% endif %}
+                                            {% if 'DINNER' in item.available_slots %}
+                                                <span class="badge bg-dark-navy text-white px-2 py-1 rounded-pill" style="font-size: 0.65rem;">
+                                                    Dinner
+                                                </span>
+                                            {% endif %}
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <strong class="text-success fs-6">₹{{ item.effective_price }}</strong>
+                                    {% if item.discounted_price %}
+                                        <small class="text-muted text-decoration-line-through d-block" style="font-size: 0.75rem;">₹{{ item.price }}</small>
+                                        <span class="badge bg-success-subtle text-success px-1" style="font-size: 0.62rem;">30% OFF</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="small lh-sm">
+                                        <span class="text-dark fw-bold">{{ item.calories }} kcal</span><br>
+                                        <span class="text-success fw-semibold">{{ item.protein_grams }}g P</span>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <!-- 1-Click Instant Stock Switcher (In Stock / Sold Out) -->
+                                    <button type="button" 
+                                            class="btn btn-sm rounded-pill px-3 py-1 stock-toggle-btn {% if item.is_available %}btn-success text-white{% else %}btn-outline-danger{% endif %}" 
+                                            data-item-id="{{ item.id }}"
+                                            data-url="{% url 'menu:admin_food_toggle_availability' item.id %}"
+                                            style="font-size: 0.75rem; min-width: 95px;">
+                                        {% if item.is_available %}
+                                            <i class="fa-solid fa-check me-1"></i> In Stock
+                                        {% else %}
+                                            <i class="fa-solid fa-ban me-1"></i> Sold Out
+                                        {% endif %}
+                                    </button>
+                                </td>
+                                <td class="text-center">
+                                    <!-- 1-Click Auto-Timing Toggle -->
+                                    <button type="button" 
+                                            class="btn btn-sm rounded-pill px-2 py-1 timing-toggle-btn {% if item.auto_timing_enabled %}btn-primary text-white{% else %}btn-outline-secondary{% endif %}" 
+                                            data-item-id="{{ item.id }}"
+                                            data-url="{% url 'menu:admin_food_toggle_availability' item.id %}"
+                                            style="font-size: 0.72rem; min-width: 85px;"
+                                            title="Enforces stock availability based on Breakfast, Lunch, Snack, Dinner hours">
+                                        {% if item.auto_timing_enabled %}
+                                            <i class="fa-solid fa-clock me-1"></i> Auto
+                                        {% else %}
+                                            <i class="fa-solid fa-hand me-1"></i> Manual
+                                        {% endif %}
+                                    </button>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="d-flex justify-content-end gap-1">
+                                        <a href="{% url 'menu:admin_food_update' item.id %}" class="btn btn-sm btn-outline-primary rounded-pill px-2" title="Edit Item">
+                                            <i class="fa-regular fa-pen-to-square"></i>
+                                        </a>
+                                        <a href="{% url 'menu:admin_food_delete' item.id %}" class="btn btn-sm btn-outline-danger rounded-pill px-2" title="Delete Item">
+                                            <i class="fa-regular fa-trash-can"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fa-solid fa-utensils text-muted fs-1 mb-2"></i>
+                <h5 class="fw-bold text-dark">No Food Items Match Filters</h5>
+                <p class="text-muted small mb-3">Try clearing search filters or add a new nutritious dish.</p>
+                <button type="button" class="btn btn-nutrient rounded-pill btn-sm px-4" data-bs-toggle="modal" data-bs-target="#quickAddDishModal">
+                    <i class="fa-solid fa-bolt me-1"></i> + Quick Add Dish
+                </button>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- Modal: Instant Quick Add Food Item for Chef -->
+<!-- ========================================== -->
+<div class="modal fade" id="quickAddDishModal" tabindex="-1" aria-labelledby="quickAddDishModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-dark-navy text-white px-4 py-3">
+                <div>
+                    <h5 class="modal-title fw-bold mb-0" id="quickAddDishModalLabel">
+                        <i class="fa-solid fa-bolt text-warning me-2"></i> Instant Add New Dish
+                    </h5>
+                    <small class="text-white-50">Add a nutritious super food dish to the live menu instantly</small>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="quickAddDishForm" method="post" action="{% url 'menu:admin_quick_food_create' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body p-4 bg-light">
+                    <div class="row g-3">
+                        <!-- Dish Name -->
+                        <div class="col-md-8">
+                            <label class="form-label fw-bold small text-dark">Dish Name <span class="text-danger">*</span></label>
+                            <input type="text" name="name" class="form-control rounded-3" placeholder="e.g. Avocado Chickpea Power Bowl" required>
+                        </div>
+
+                        <!-- Category -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-dark">Category <span class="text-danger">*</span></label>
+                            <select name="category_id" class="form-select rounded-3" required>
+                                {% for cat in categories %}
+                                    <option value="{{ cat.id }}">{{ cat.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Diet Classification -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-dark">Diet Type</label>
+                            <select name="food_type" class="form-select rounded-3">
+                                <option value="VEG" selected>🥬 Vegetarian</option>
+                                <option value="NON_VEG">🍗 Non-Vegetarian</option>
+                                <option value="VEGAN">🌱 Vegan</option>
+                            </select>
+                        </div>
+
+                        <!-- Original Price (MRP) -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-dark">Original Price (₹ MRP) <span class="text-danger">*</span></label>
+                            <input type="number" step="1" name="price" id="quick-dish-price" class="form-control rounded-3" placeholder="259" required oninput="calculateDiscountPrice()">
+                        </div>
+
+                        <!-- Discounted / Selling Price -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-dark">Selling Price (30% OFF ₹)</label>
+                            <input type="number" step="1" name="discounted_price" id="quick-dish-discounted-price" class="form-control rounded-3" placeholder="179">
+                            <div class="form-text small" style="font-size: 0.72rem;">Calculated at 70% of MRP (30% discount).</div>
+                        </div>
+
+                        <!-- Calories & Protein -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-dark">Calories (kcal)</label>
+                            <input type="number" name="calories" class="form-control rounded-3" value="380">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-dark">Protein (grams)</label>
+                            <input type="number" step="0.5" name="protein_grams" class="form-control rounded-3" value="25.0">
+                        </div>
+
+                        <!-- Meal Timing Slots -->
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-dark d-block mb-2">
+                                <i class="fa-solid fa-clock text-primary me-1"></i> Available Meal Timing Slots
+                            </label>
+                            <div class="p-3 bg-white rounded-3 border d-flex flex-wrap gap-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="available_slots" value="BREAKFAST" id="slotBreakfast" checked>
+                                    <label class="form-check-label small fw-semibold" for="slotBreakfast">
+                                        Breakfast <span class="text-muted">(07:00 – 11:30 AM)</span>
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="available_slots" value="LUNCH" id="slotLunch" checked>
+                                    <label class="form-check-label small fw-semibold" for="slotLunch">
+                                        Lunch <span class="text-muted">(11:30 AM – 04:00 PM)</span>
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="available_slots" value="SNACK" id="slotSnack" checked>
+                                    <label class="form-check-label small fw-semibold" for="slotSnack">
+                                        Snack <span class="text-muted">(04:00 – 07:00 PM)</span>
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="available_slots" value="DINNER" id="slotDinner" checked>
+                                    <label class="form-check-label small fw-semibold" for="slotDinner">
+                                        Dinner <span class="text-muted">(07:00 – 11:00 PM)</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Operational Toggles -->
+                        <div class="col-md-6">
+                            <div class="form-check form-switch p-3 bg-white rounded-3 border">
+                                <input class="form-check-input ms-0 me-2" type="checkbox" name="auto_timing_enabled" value="true" id="quickAutoTiming" checked>
+                                <label class="form-check-label small fw-bold" for="quickAutoTiming">
+                                    Enforce Auto Meal Timings
+                                </label>
+                                <small class="text-muted d-block ps-4" style="font-size: 0.72rem;">Available automatically only during checked slots.</small>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-check form-switch p-3 bg-white rounded-3 border">
+                                <input class="form-check-input ms-0 me-2" type="checkbox" name="is_available" value="true" id="quickInStock" checked>
+                                <label class="form-check-label small fw-bold" for="quickInStock">
+                                    In Stock Right Now
+                                </label>
+                                <small class="text-muted d-block ps-4" style="font-size: 0.72rem;">Set to Sold Out anytime with 1-click toggle.</small>
+                            </div>
+                        </div>
+
+                        <!-- Dish Photo -->
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-dark">
+                                <i class="fa-solid fa-camera text-success me-1"></i> Dish Photo (Optional)
+                            </label>
+                            <input type="file" name="image" class="form-control rounded-3" accept="image/*">
+                            <small class="text-muted" style="font-size: 0.72rem;">Supports JPG, PNG, WEBP. Shows immediately on menu cards and detail pages.</small>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-dark">Description</label>
+                            <textarea name="description" class="form-control rounded-3" rows="2" placeholder="Ingredients, benefits, clean recipe notes..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-white px-4 py-3">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-nutrient rounded-pill px-4 fw-bold shadow-sm">
+                        <i class="fa-solid fa-check me-1"></i> Save & Publish Dish Instantly
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function calculateDiscountPrice() {
+    const priceInput = document.getElementById('quick-dish-price');
+    const discountInput = document.getElementById('quick-dish-discounted-price');
+    const val = parseFloat(priceInput.value);
+    if (!isNaN(val) && val > 0) {
+        discountInput.value = Math.round(val * 0.70);
+    }
+}
+
+// 1-Click Stock Toggle AJAX
+document.querySelectorAll('.stock-toggle-btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const url = this.getAttribute('data-url');
+        const csrfToken = '{{ csrf_token }}';
+        const button = this;
+
+        button.disabled = true;
+        button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+        const formData = new FormData();
+        formData.append('action', 'toggle_stock');
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            button.disabled = false;
+            if (data.success) {
+                const row = document.getElementById('item-row-' + data.item_id);
+                if (data.is_available) {
+                    button.className = 'btn btn-sm rounded-pill px-3 py-1 stock-toggle-btn btn-success text-white';
+                    button.innerHTML = '<i class="fa-solid fa-check me-1"></i> In Stock';
+                    if (row) row.classList.remove('bg-light', 'bg-opacity-50');
+                } else {
+                    button.className = 'btn btn-sm rounded-pill px-3 py-1 stock-toggle-btn btn-outline-danger';
+                    button.innerHTML = '<i class="fa-solid fa-ban me-1"></i> Sold Out';
+                    if (row) row.classList.add('bg-light', 'bg-opacity-50');
+                }
+            } else {
+                alert(data.message || 'Failed to update stock status.');
+            }
+        })
+        .catch(err => {
+            button.disabled = false;
+            alert('Error updating stock status.');
+        });
+    });
+});
+
+// 1-Click Auto Timing Toggle AJAX
+document.querySelectorAll('.timing-toggle-btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const url = this.getAttribute('data-url');
+        const csrfToken = '{{ csrf_token }}';
+        const button = this;
+
+        button.disabled = true;
+        button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+        const formData = new FormData();
+        formData.append('action', 'toggle_timing');
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            button.disabled = false;
+            if (data.success) {
+                if (data.auto_timing_enabled) {
+                    button.className = 'btn btn-sm rounded-pill px-2 py-1 timing-toggle-btn btn-primary text-white';
+                    button.innerHTML = '<i class="fa-solid fa-clock me-1"></i> Auto';
+                } else {
+                    button.className = 'btn btn-sm rounded-pill px-2 py-1 timing-toggle-btn btn-outline-secondary';
+                    button.innerHTML = '<i class="fa-solid fa-hand me-1"></i> Manual';
+                }
+            } else {
+                alert(data.message || 'Failed to update timing mode.');
+            }
+        })
+        .catch(err => {
+            button.disabled = false;
+            alert('Error updating timing mode.');
+        });
+    });
+});
+</script>
+{% endblock %}

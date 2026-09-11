@@ -1,0 +1,304 @@
+{% extends 'base.html' %}
+
+{% block title %}Checkout | Nutrient – The Super Food{% endblock %}
+
+{% block content %}
+<div class="py-4">
+    <div class="mb-4">
+        <a href="{% url 'cart:cart_detail' %}" class="btn btn-outline-secondary btn-sm rounded-pill">
+            <i class="fa-solid fa-arrow-left me-1"></i> Back to Cart
+        </a>
+    </div>
+
+    <div class="row g-4">
+        <!-- Main Form Column -->
+        <div class="col-lg-7">
+            <form method="post" id="checkout-main-form">
+                {% csrf_token %}
+
+                <!-- 1. Delivery Address Section -->
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-dark-navy text-success rounded-circle p-2" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;">1</span>
+                            <h5 class="fw-bold text-dark mb-0">Delivery Address</h5>
+                        </div>
+                        <button class="btn btn-sm btn-outline-success rounded-pill" type="button" data-bs-toggle="collapse" data-bs-target="#quickAddressCollapse">
+                            <i class="fa-solid fa-plus me-1"></i> Add New Address
+                        </button>
+                    </div>
+
+                    <!-- In-line Address Form Collapse -->
+                    <div class="collapse mb-4" id="quickAddressCollapse">
+                        <div class="p-3 bg-light rounded-4 border">
+                            <h6 class="fw-bold text-dark mb-3 small text-uppercase tracking-wider">Save New Delivery Address</h6>
+                            <div class="row g-2 mb-2">
+                                <div class="col-sm-6">
+                                    <label class="form-label small fw-semibold text-muted">Type</label>
+                                    {{ quick_addr_form.address_type }}
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label small fw-semibold text-muted">Recipient Name</label>
+                                    {{ quick_addr_form.contact_name }}
+                                </div>
+                            </div>
+                            <div class="row g-2 mb-2">
+                                <div class="col-sm-6">
+                                    <label class="form-label small fw-semibold text-muted">Contact Phone</label>
+                                    {{ quick_addr_form.contact_phone }}
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label small fw-semibold text-muted">Flat / House No</label>
+                                    {{ quick_addr_form.apartment_flat }}
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label small fw-semibold text-muted">Street Address</label>
+                                {{ quick_addr_form.street_address }}
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-sm-6">
+                                    <label class="form-label small fw-semibold text-muted">Landmark</label>
+                                    {{ quick_addr_form.landmark }}
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label small fw-semibold text-muted">Pincode</label>
+                                    {{ quick_addr_form.pincode }}
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-end gap-2">
+                                <button type="button" class="btn btn-sm btn-light rounded-pill" data-bs-toggle="collapse" data-bs-target="#quickAddressCollapse">Cancel</button>
+                                <button type="submit" name="action" value="add_address" class="btn btn-sm btn-nutrient rounded-pill px-3">
+                                    Save Address
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Address Radio Cards -->
+                    {% if addresses %}
+                        <div class="d-flex flex-column gap-3">
+                            {% for addr in addresses %}
+                                <label class="p-3 border rounded-4 d-flex align-items-start gap-3 cursor-pointer address-card {% if form.address.value == addr.id or forloop.first and not form.address.value %}border-success bg-success-subtle bg-opacity-25{% endif %}" style="cursor: pointer;">
+                                    <input type="radio" name="address" value="{{ addr.id }}" class="form-check-input mt-1" {% if form.address.value == addr.id or forloop.first and not form.address.value %}checked{% endif %}>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <strong class="text-dark">{{ addr.get_address_type_display }}</strong>
+                                            {% if addr.is_default %}
+                                                <span class="badge bg-success-subtle text-success small">Default</span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="small text-secondary lh-sm mb-1">
+                                            {{ addr.full_address }}
+                                        </div>
+                                        <div class="small text-muted">
+                                            <i class="fa-solid fa-phone me-1 text-success"></i>{{ addr.contact_phone|default:user.phone }}
+                                        </div>
+                                    </div>
+                                </label>
+                            {% endfor %}
+                        </div>
+                        {% if form.address.errors %}
+                            <div class="text-danger small mt-2">{{ form.address.errors.0 }}</div>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-warning py-3 small mb-0">
+                            <i class="fa-solid fa-location-dot me-1"></i> Please add a delivery address above to place your order.
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- 2. Delivery Notes Section -->
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="badge bg-dark-navy text-success rounded-circle p-2" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;">2</span>
+                        <h5 class="fw-bold text-dark mb-0">Delivery Instructions (Optional)</h5>
+                    </div>
+                    {{ form.customer_notes }}
+                </div>
+
+                <!-- 3. Payment Method Section -->
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="badge bg-dark-navy text-success rounded-circle p-2" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;">3</span>
+                        <h5 class="fw-bold text-dark mb-0">Payment Method</h5>
+                    </div>
+
+                    <div class="d-flex flex-column gap-3">
+                        <!-- Cash On Delivery -->
+                        <label class="p-3 border rounded-4 d-flex align-items-center justify-content-between cursor-pointer payment-option-card">
+                            <div class="d-flex align-items-center gap-3">
+                                <input type="radio" name="payment_method" value="COD" class="form-check-input" checked>
+                                <div>
+                                    <strong class="text-dark d-block">Cash on Delivery (COD)</strong>
+                                    <small class="text-muted">Pay at doorstep with Cash or UPI upon meal handover</small>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-money-bill-wave text-success fs-4"></i>
+                        </label>
+
+                        <!-- Instant Online Mock / Demo -->
+                        <label class="p-3 border rounded-4 d-flex align-items-center justify-content-between cursor-pointer payment-option-card">
+                            <div class="d-flex align-items-center gap-3">
+                                <input type="radio" name="payment_method" value="ONLINE_MOCK" class="form-check-input">
+                                <div>
+                                    <strong class="text-dark d-block">Instant Demo Payment (Test Mode)</strong>
+                                    <small class="text-muted">One-click simulated checkout for instant order placement</small>
+                                </div>
+                            </div>
+                            <span class="badge bg-primary-subtle text-primary px-3 py-1 rounded-pill">Instant Test</span>
+                        </label>
+
+                        <!-- Razorpay Gateway -->
+                        <label class="p-3 border rounded-4 d-flex align-items-center justify-content-between cursor-pointer payment-option-card">
+                            <div class="d-flex align-items-center gap-3">
+                                <input type="radio" name="payment_method" value="RAZORPAY" class="form-check-input">
+                                <div>
+                                    <strong class="text-dark d-block">Razorpay / UPI / NetBanking</strong>
+                                    <small class="text-muted">Google Pay, PhonePe, Paytm, Credit & Debit Cards</small>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-1 text-muted fs-4">
+                                <i class="fa-brands fa-google-pay text-primary"></i>
+                                <i class="fa-solid fa-credit-card text-success"></i>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="d-none d-lg-block">
+                    <button type="submit" class="btn btn-nutrient w-100 py-3 rounded-pill fw-bold fs-5 shadow-sm">
+                        <i class="fa-solid fa-lock me-2"></i> Place Super Food Order (₹<span class="final-btn-amount">{{ summary.total_amount }}</span>)
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Order Summary Column -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white sticky-top" style="top: 90px;">
+                <h5 class="fw-bold text-dark mb-3">Order Items ({{ summary.total_items }})</h5>
+
+                <!-- Items Mini-List -->
+                <div class="d-flex flex-column gap-2 mb-4 max-h-300 overflow-y-auto">
+                    {% for item in summary.items %}
+                        <div class="d-flex justify-content-between align-items-center small py-1 border-bottom border-light">
+                            <div>
+                                <span class="badge {% if item.food_item.food_type == 'VEG' %}bg-success{% elif item.food_item.food_type == 'NON_VEG' %}bg-danger{% else %}bg-warning text-dark{% endif %} p-1 rounded-circle me-1" style="width: 8px; height: 8px; display: inline-block;"></span>
+                                <strong class="text-dark">{{ item.quantity }}x</strong> {{ item.food_item.name }}
+                            </div>
+                            <strong class="text-dark">₹{{ item.subtotal }}</strong>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Nutrition Box -->
+                <div class="p-3 bg-dark-navy text-white rounded-4 mb-4 small d-flex justify-content-around text-center">
+                    <div>
+                        <span class="text-white-50 d-block" style="font-size: 0.7rem;">TOTAL PROTEIN</span>
+                        <strong class="text-success fs-5">{{ summary.total_protein }}g</strong>
+                    </div>
+                    <div class="border-start border-secondary border-opacity-50 ps-3">
+                        <span class="text-white-50 d-block" style="font-size: 0.7rem;">TOTAL ENERGY</span>
+                        <strong class="text-white fs-5">{{ summary.total_calories }} kcal</strong>
+                    </div>
+                </div>
+
+                <!-- Coupon Input Box -->
+                <div class="mb-4">
+                    <label class="form-label small fw-semibold text-muted">Promo Voucher / Coupon</label>
+                    <div class="input-group">
+                        <input type="text" id="coupon-input" class="form-control text-uppercase" placeholder="e.g. CLEAN20">
+                        <button class="btn btn-dark-navy" type="button" onclick="applyCoupon()">Apply</button>
+                    </div>
+                    <div id="coupon-message" class="small mt-1 d-none"></div>
+                </div>
+
+                <!-- Bill Breakdown -->
+                <h6 class="fw-bold text-dark mb-3 text-uppercase small tracking-wider">Bill Summary</h6>
+                <ul class="list-group list-group-flush small mb-4">
+                    <li class="list-group-item d-flex justify-content-between px-0 bg-transparent">
+                        <span class="text-muted">Item Subtotal</span>
+                        <strong class="text-dark">₹{{ summary.subtotal }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0 bg-transparent">
+                        <span class="text-muted">GST Tax ({{ summary.tax_percentage }}%)</span>
+                        <span class="text-dark">₹{{ summary.tax_amount }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0 bg-transparent">
+                        <span class="text-muted">Delivery Charge</span>
+                        <span>
+                            {% if summary.is_free_delivery %}
+                                <span class="badge bg-success-subtle text-success">FREE</span>
+                            {% else %}
+                                ₹{{ summary.delivery_fee }}
+                            {% endif %}
+                        </span>
+                    </li>
+                    <li id="discount-row" class="list-group-item d-flex justify-content-between px-0 bg-transparent text-success d-none">
+                        <span>Coupon Discount</span>
+                        <strong id="discount-display">-₹0.00</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between px-0 bg-transparent pt-3 border-top border-2">
+                        <span class="fs-6 fw-bold text-dark">Total Payable</span>
+                        <strong class="fs-4 fw-extrabold text-success" id="checkout-total-display">₹{{ summary.total_amount }}</strong>
+                    </li>
+                </ul>
+
+                <div class="d-lg-none">
+                    <button type="submit" form="checkout-main-form" class="btn btn-nutrient w-100 py-3 rounded-pill fw-bold fs-5 shadow-sm">
+                        <i class="fa-solid fa-lock me-2"></i> Place Order (₹<span class="final-btn-amount">{{ summary.total_amount }}</span>)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function applyCoupon() {
+    const input = document.getElementById('coupon-input');
+    const msg = document.getElementById('coupon-message');
+    const code = input.value.trim();
+
+    if (!code) return;
+
+    const fd = new FormData();
+    fd.append('coupon_code', code);
+    fd.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+    fetch("{% url 'orders:apply_coupon' %}", {
+        method: "POST",
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+        body: fd
+    })
+    .then(res => res.json())
+    .then(data => {
+        msg.classList.remove('d-none', 'text-success', 'text-danger');
+        if (data.success) {
+            msg.classList.add('text-success');
+            msg.textContent = data.message;
+            document.getElementById('discount-row').classList.remove('d-none');
+            document.getElementById('discount-display').textContent = `-₹${data.discount_amount}`;
+            document.getElementById('checkout-total-display').textContent = `₹${data.new_total}`;
+            document.querySelectorAll('.final-btn-amount').forEach(el => el.textContent = data.new_total);
+
+            // Pass coupon code to main checkout form
+            let hiddenCoupon = document.getElementById('hidden-coupon-code');
+            if (!hiddenCoupon) {
+                hiddenCoupon = document.createElement('input');
+                hiddenCoupon.type = 'hidden';
+                hiddenCoupon.name = 'coupon_code';
+                hiddenCoupon.id = 'hidden-coupon-code';
+                document.getElementById('checkout-main-form').appendChild(hiddenCoupon);
+            }
+            hiddenCoupon.value = data.coupon_code;
+        } else {
+            msg.classList.add('text-danger');
+            msg.textContent = data.message;
+        }
+    })
+    .catch(err => console.error(err));
+}
+</script>
+{% endblock %}

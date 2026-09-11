@@ -1,0 +1,243 @@
+{% extends 'base.html' %}
+
+{% block title %}Meal Bowl Subscriptions | NUTRIENT / THE SUPER FOOD KITCHEN{% endblock %}
+
+{% block content %}
+<!-- Subscriptions Hero Banner -->
+<div class="rounded-4 p-4 p-md-5 mb-5 bg-dark-navy text-white position-relative overflow-hidden shadow-sm">
+    <div class="row align-items-center position-relative" style="z-index: 2;">
+        <div class="col-lg-8">
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                <span class="badge bg-success text-white px-3 py-1 rounded-pill fw-bold">
+                    <i class="fa-solid fa-tag me-1"></i> 30% OFF LAUNCH PRICING
+                </span>
+                <span class="badge bg-white bg-opacity-10 text-white px-3 py-1 rounded-pill">
+                    <i class="fa-solid fa-truck-fast text-success me-1"></i> Free Delivery within 3km
+                </span>
+                <span class="badge bg-white bg-opacity-10 text-white px-3 py-1 rounded-pill">
+                    <i class="fa-solid fa-sliders text-warning me-1"></i> Daily Meal Customization
+                </span>
+            </div>
+            
+            <h1 class="display-5 fw-extrabold text-white mb-2">Weekly & Monthly Meal Subscriptions</h1>
+            <p class="lead text-white-50 mb-4 fs-6">
+                Never worry about healthy eating again. Get authentic chef-crafted super food bowls delivered daily to your home or office in Hyderabad.
+            </p>
+
+            <div class="d-flex flex-wrap gap-3">
+                <a href="#plans-grid" class="btn btn-nutrient px-4 py-2 rounded-pill fw-bold shadow-sm">
+                    <i class="fa-solid fa-calendar-check me-2"></i>Choose Your Plan
+                </a>
+                <a href="{% url 'subscriptions:my_subscriptions' %}" class="btn btn-outline-light px-4 py-2 rounded-pill fw-semibold">
+                    <i class="fa-solid fa-user-check me-2"></i>Manage My Subscriptions
+                </a>
+            </div>
+        </div>
+
+        <div class="col-lg-4 mt-4 mt-lg-0">
+            <div class="bg-white bg-opacity-10 p-4 rounded-4 border border-white border-opacity-10 text-start">
+                <h6 class="fw-bold text-success mb-2">
+                    <i class="fa-solid fa-circle-check me-1"></i> Every Subscription Includes:
+                </h6>
+                <ul class="list-unstyled small text-white-50 mb-0 d-flex flex-column gap-2">
+                    <li><i class="fa-solid fa-check text-success me-2"></i><strong>1 Fresh Super Food Bowl</strong> daily</li>
+                    <li><i class="fa-solid fa-check text-success me-2"></i><strong>Complimentary Super Drink</strong> (ABC juice/herbal)</li>
+                    <li><i class="fa-solid fa-check text-success me-2"></i><strong>House Dressing / Fresh Raita</strong></li>
+                    <li><i class="fa-solid fa-check text-success me-2"></i><strong>Free 3km quick home delivery</strong></li>
+                    <li><i class="fa-solid fa-check text-success me-2"></i><strong>Pause or reschedule</strong> anytime with 1 tap</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- "Why choose whole Nutritious food?" Brand Story Feature -->
+<div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 mb-5 bg-white">
+    <div class="row align-items-center g-4">
+        <div class="col-md-3 text-center border-end-md">
+            <div class="d-inline-flex p-3 rounded-circle bg-success-subtle text-success mb-3" style="font-size: 2.5rem;">
+                <i class="fa-solid fa-seedling"></i>
+            </div>
+            <h5 class="fw-bold text-dark mb-1">Nutrient Philosophy</h5>
+            <span class="badge bg-dark-navy text-warning px-3 py-1 rounded-pill small">100% Clean Food</span>
+        </div>
+        <div class="col-md-9">
+            <h4 class="fw-bold text-dark mb-3">Why choose whole Nutritious food?</h4>
+            <p class="text-secondary mb-3 lh-base">
+                “Whole foods are minimally processed and full of vitamins, minerals, fiber and antioxidants. By focusing on natural, nutrient-dense options, you can enjoy the benefits of balanced energy, strong immunity and overall vitality.”
+            </p>
+            <p class="text-secondary small mb-0 lh-base">
+                Rich in vitamins, minerals and fiber, fruits and vegetables keep your body energized and your immune system strong. Brightly coloured portions like berries, spinach, carrots and tomatoes are especially packed with antioxidants.
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Plans Filter Tabs & Grid -->
+<div id="plans-grid" class="py-2 mb-5">
+    <div class="text-center mb-4">
+        <h2 class="fw-extrabold text-dark mb-2">Select Your Subscription Plan</h2>
+        <p class="text-muted small">All prices reflect our <strong>special 30% discount</strong>. Free delivery within 3km included.</p>
+
+        <!-- Duration Switcher Tabs -->
+        <ul class="nav nav-pills justify-content-center gap-2 mt-3" id="planDurationTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active rounded-pill px-4 py-2 fw-bold" id="weekly-tab" data-bs-toggle="pill" data-bs-target="#weekly-plans" type="button" role="tab">
+                    <i class="fa-solid fa-calendar-week me-1"></i> Weekly Plans (7 Bowls)
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link rounded-pill px-4 py-2 fw-bold" id="monthly-tab" data-bs-toggle="pill" data-bs-target="#monthly-plans" type="button" role="tab">
+                    <i class="fa-solid fa-calendar-days me-1"></i> Monthly Plans (30 Bowls)
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="tab-content mt-4" id="planDurationTabsContent">
+        <!-- WEEKLY PLANS (7 Bowls) -->
+        <div class="tab-pane fade show active" id="weekly-plans" role="tabpanel">
+            <div class="row g-4">
+                {% for plan in weekly_plans %}
+                    <div class="col-md-6 col-lg-3">
+                        <div class="card h-100 border-0 shadow-sm rounded-4 p-4 d-flex flex-column bg-white position-relative hover-shadow transition-all">
+                            <!-- Discount Badge -->
+                            <div class="position-absolute top-0 end-0 m-3">
+                                <span class="badge bg-success text-white px-2 py-1 rounded-pill fw-bold" style="font-size: 0.75rem;">
+                                    30% OFF
+                                </span>
+                            </div>
+
+                            <div class="mb-3">
+                                <span class="badge {% if 'Veg' in plan.name and 'Non' not in plan.name %}bg-success{% else %}bg-danger{% endif %} px-2 py-1 rounded-pill small mb-2">
+                                    {% if 'Veg' in plan.name and 'Non' not in plan.name %}VEGETARIAN{% else %}NON-VEG{% endif %}
+                                </span>
+                                <h5 class="fw-bold text-dark mb-1">{{ plan.name }}</h5>
+                                <span class="text-muted small d-block">7 Days • 1 Bowl / Day</span>
+                            </div>
+
+                            <!-- Pricing -->
+                            <div class="bg-light p-3 rounded-3 mb-3 text-center">
+                                <div class="text-muted text-decoration-line-through small">MRP ₹{{ plan.original_price }}</div>
+                                <div class="fs-3 fw-extrabold text-success">₹{{ plan.price }}</div>
+                                <div class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill mt-1" style="font-size: 0.7rem;">
+                                    Save ₹{{ plan.savings_amount }} (₹{{ plan.price_per_bowl }}/bowl)
+                                </div>
+                            </div>
+
+                            <!-- Perks list -->
+                            <ul class="list-unstyled small text-secondary mb-4 flex-grow-1 d-flex flex-column gap-2">
+                                <li><i class="fa-solid fa-circle-check text-success me-2"></i>7 fresh super food bowls</li>
+                                <li><i class="fa-solid fa-circle-check text-success me-2"></i>Dressing / Raita included</li>
+                                <li><i class="fa-solid fa-circle-check text-success me-2"></i>Chilled Super Drink daily</li>
+                                <li><i class="fa-solid fa-circle-check text-success me-2"></i>Free home delivery (3km)</li>
+                                <li><i class="fa-solid fa-circle-check text-success me-2"></i>Daily ingredient customization</li>
+                            </ul>
+
+                            <a href="{% url 'subscriptions:subscribe' plan.id %}" class="btn btn-nutrient rounded-pill fw-bold py-2 w-100">
+                                Subscribe Now <i class="fa-solid fa-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- MONTHLY PLANS (30 Bowls) -->
+        <div class="tab-pane fade" id="monthly-plans" role="tabpanel">
+            <div class="row g-4">
+                {% for plan in monthly_plans %}
+                    <div class="col-md-6 col-lg-3">
+                        <div class="card h-100 border-0 shadow-sm rounded-4 p-4 d-flex flex-column bg-white position-relative hover-shadow transition-all border-top border-4 border-success">
+                            <!-- Discount Badge -->
+                            <div class="position-absolute top-0 end-0 m-3">
+                                <span class="badge bg-success text-white px-2 py-1 rounded-pill fw-bold" style="font-size: 0.75rem;">
+                                    30% OFF • BEST VALUE
+                                </span>
+                            </div>
+
+                            <div class="mb-3">
+                                <span class="badge {% if 'Veg' in plan.name and 'Non' not in plan.name %}bg-success{% else %}bg-danger{% endif %} px-2 py-1 rounded-pill small mb-2">
+                                    {% if 'Veg' in plan.name and 'Non' not in plan.name %}VEGETARIAN{% else %}NON-VEG{% endif %}
+                                </span>
+                                <h5 class="fw-bold text-dark mb-1">{{ plan.name }}</h5>
+                                <span class="text-muted small d-block">30 Days • 1 Bowl / Day</span>
+                            </div>
+
+                            <!-- Pricing -->
+                            <div class="bg-light p-3 rounded-3 mb-3 text-center">
+                                <div class="text-muted text-decoration-line-through small">MRP ₹{{ plan.original_price }}</div>
+                                <div class="fs-3 fw-extrabold text-success">₹{{ plan.price }}</div>
+                                <div class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill mt-1" style="font-size: 0.7rem;">
+                                    Save ₹{{ plan.savings_amount }} (₹{{ plan.price_per_bowl }}/bowl)
+                                </div>
+                            </div>
+
+                            <!-- Perks list -->
+                            <ul class="list-unstyled small text-secondary mb-4 flex-grow-1 d-flex flex-column gap-2">
+                                <li><i class="fa-solid fa-circle-check text-success me-2"></i>30 fresh super food bowls</li>
+                                <li><i class="fa-solid fa-circle-check text-success me-2"></i>Dressing / Raita included</li>
+                                <li><i class="fa-solid fa-circle-check text-success me-2"></i>Chilled Super Drink daily</li>
+                                <li><i class="fa-solid fa-circle-check text-success me-2"></i>Free home delivery (3km)</li>
+                                <li><i class="fa-solid fa-circle-check text-success me-2"></i>Pause anytime if traveling</li>
+                            </ul>
+
+                            <a href="{% url 'subscriptions:subscribe' plan.id %}" class="btn btn-nutrient rounded-pill fw-bold py-2 w-100">
+                                Subscribe Monthly <i class="fa-solid fa-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- How Subscriptions Work 3-Step Section -->
+<div class="py-4 mb-4">
+    <div class="text-center mb-4">
+        <h3 class="fw-bold text-dark">How Your Subscription Works</h3>
+        <p class="text-muted small">Four simple steps to consistent, effortless nutrition</p>
+    </div>
+
+    <div class="row g-4 text-center">
+        <div class="col-md-3">
+            <div class="p-4 bg-white rounded-4 shadow-sm h-100">
+                <div class="brand-icon-box bg-success-subtle text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                    <i class="fa-solid fa-calendar-check fs-4"></i>
+                </div>
+                <h6 class="fw-bold">1. Select Duration</h6>
+                <p class="small text-muted mb-0">Choose between a 7-day weekly reset or a 30-day monthly lifestyle plan with 30% savings.</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="p-4 bg-white rounded-4 shadow-sm h-100">
+                <div class="brand-icon-box bg-success-subtle text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                    <i class="fa-solid fa-clock fs-4"></i>
+                </div>
+                <h6 class="fw-bold">2. Set Slot & Address</h6>
+                <p class="small text-muted mb-0">Choose your preferred delivery window: Lunch (12:30–1:30 PM) or Dinner (7:30–8:30 PM).</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="p-4 bg-white rounded-4 shadow-sm h-100">
+                <div class="brand-icon-box bg-success-subtle text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                    <i class="fa-solid fa-sliders fs-4"></i>
+                </div>
+                <h6 class="fw-bold">3. Customize Daily</h6>
+                <p class="small text-muted mb-0">Set your default recipe and customize ingredients, grains, dressing, and drinks for any upcoming date.</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="p-4 bg-white rounded-4 shadow-sm h-100">
+                <div class="brand-icon-box bg-success-subtle text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                    <i class="fa-solid fa-truck-ramp-box fs-4"></i>
+                </div>
+                <h6 class="fw-bold">4. Free 3km Delivery</h6>
+                <p class="small text-muted mb-0">Freshly assembled and dispatched hot or chilled to your door daily with zero delivery charges.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

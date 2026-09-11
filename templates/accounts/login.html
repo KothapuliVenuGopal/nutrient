@@ -1,0 +1,470 @@
+{% extends 'base.html' %}
+
+{% block title %}Sign In | Nutrient – The Super Food{% endblock %}
+
+{% block extra_css %}
+<style>
+    .auth-tab-btn {
+        border: none;
+        background: transparent;
+        color: #6c757d;
+        font-weight: 600;
+        padding: 0.85rem 1rem;
+        border-bottom: 3px solid transparent;
+        transition: all 0.2s ease;
+    }
+    .auth-tab-btn.active {
+        color: #2D6A4F;
+        border-bottom-color: #2D6A4F;
+        background-color: rgba(45, 106, 79, 0.04);
+    }
+    .otp-input-box {
+        letter-spacing: 0.5em;
+        font-size: 1.5rem;
+        font-weight: 700;
+        text-align: center;
+    }
+    .phone-prefix-badge {
+        background-color: #f8f9fa;
+        border-right: 0;
+        font-weight: 600;
+        color: #495057;
+    }
+    .dev-badge-pulse {
+        animation: pulse-soft 2s infinite;
+    }
+    @keyframes pulse-soft {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.02); }
+        100% { transform: scale(1); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4 py-md-5">
+    <div class="col-md-7 col-lg-5">
+        <div class="card border-0 shadow rounded-4 overflow-hidden">
+            <!-- Brand Header -->
+            <div class="bg-dark-navy p-4 text-center text-white">
+                <div class="brand-icon-box bg-success bg-opacity-25 text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 52px; height: 52px;">
+                    <i class="fa-solid fa-leaf fs-3 text-success"></i>
+                </div>
+                <h4 class="fw-bold mb-1">Nutrient – The Super Food</h4>
+                <p class="text-white-50 small mb-0">Clean Nutrition Delivered in Hyderabad</p>
+            </div>
+
+            <!-- Tab Switcher: Fast OTP vs Password -->
+            <div class="d-flex border-bottom bg-white text-center">
+                <button class="flex-fill auth-tab-btn active" id="tabOtpBtn" onclick="switchAuthTab('otp')">
+                    <i class="fa-solid fa-mobile-screen-button me-2 text-success"></i>Phone OTP Login
+                </button>
+                <button class="flex-fill auth-tab-btn" id="tabPasswordBtn" onclick="switchAuthTab('password')">
+                    <i class="fa-solid fa-key me-2"></i>Password Login
+                </button>
+            </div>
+
+            <div class="card-body p-4 p-md-4">
+                <!-- ============================================== -->
+                <!-- TAB 1: PHONE NUMBER OTP AUTHENTICATION -->
+                <!-- ============================================== -->
+                <div id="otpSection">
+                    <div class="text-center mb-4">
+                        <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill fw-semibold mb-2">
+                            <i class="fa-solid fa-bolt me-1"></i> Instant 1-Click Access
+                        </span>
+                        <p class="text-muted small mb-0">Enter your mobile number. We'll send a 6-digit OTP to log you in instantly.</p>
+                    </div>
+
+                    <!-- Step 1: Request OTP Form -->
+                    <div id="otpStep1">
+                        <form id="sendOtpForm" onsubmit="handleSendOtp(event)">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{{ next }}">
+
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold text-muted">Mobile Number</label>
+                                <div class="input-group input-group-lg">
+                                    <span class="input-group-text phone-prefix-badge">
+                                        <span class="me-1">🇮🇳</span> +91
+                                    </span>
+                                    <input type="tel" id="inputPhone" name="phone" class="form-control" placeholder="98765 43210" maxlength="10" pattern="[6-9][0-9]{9}" required autofocus>
+                                </div>
+                                <div class="form-text small text-muted">Enter 10-digit Indian mobile number (e.g., 9876543210)</div>
+                            </div>
+
+                            <div class="mb-3" id="optionalNameDiv">
+                                <label class="form-label small fw-semibold text-muted">Your Name <span class="badge bg-light text-secondary">Optional for new users</span></label>
+                                <input type="text" id="inputName" class="form-control" placeholder="e.g. Rahul Sharma">
+                            </div>
+
+                            <div id="sendOtpAlert" class="alert py-2 small d-none" role="alert"></div>
+
+                            <button type="submit" id="btnSendOtp" class="btn btn-nutrient w-100 py-3 rounded-3 shadow-sm fw-bold fs-6">
+                                <span id="btnSendOtpText"><i class="fa-solid fa-paper-plane me-2"></i>Send Verification OTP</span>
+                                <span id="btnSendOtpSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Step 2: Verify OTP Form (Hidden initially) -->
+                    <div id="otpStep2" class="d-none">
+                        <div class="alert alert-success bg-opacity-10 border-success border-opacity-25 d-flex align-items-center justify-content-between p-3 rounded-3 mb-3">
+                            <div>
+                                <div class="small fw-bold text-success mb-0">
+                                    <i class="fa-solid fa-circle-check me-1"></i> OTP Sent to:
+                                </div>
+                                <div class="fw-bold" id="displayTargetPhone">+91 XXXXXXXXXX</div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" onclick="changePhoneNumber()">
+                                <i class="fa-solid fa-pen me-1"></i> Edit
+                            </button>
+                        </div>
+
+                        <!-- Developer Demo Helper Pill (shown when DEBUG=True) -->
+                        <div id="devOtpPill" class="alert alert-warning py-2 small rounded-3 mb-3 d-none">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <i class="fa-solid fa-laptop-code me-1 text-warning"></i>
+                                    <strong>Dev Demo OTP:</strong> <span id="devOtpVal" class="font-monospace fw-bold fs-6"></span>
+                                </div>
+                                <button type="button" class="btn btn-xs btn-dark py-0 px-2 rounded-2" onclick="quickFillDevOtp()">Auto Fill</button>
+                            </div>
+                        </div>
+
+                        <form id="verifyOtpForm" onsubmit="handleVerifyOtp(event)">
+                            {% csrf_token %}
+                            <input type="hidden" id="hiddenPhone" name="phone">
+                            <input type="hidden" id="hiddenNext" name="next" value="{{ next }}">
+
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold text-muted text-center d-block">Enter 6-Digit Code</label>
+                                <input type="text" id="inputOtpCode" class="form-control otp-input-box" placeholder="••••••" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" required autocomplete="one-time-code">
+                                <div class="d-flex justify-content-between align-items-center mt-2 small">
+                                    <span class="text-muted" id="countdownContainer">
+                                        Resend OTP in <span id="cooldownSeconds" class="fw-bold text-success">60</span>s
+                                    </span>
+                                    <button type="button" id="btnResendOtp" class="btn btn-link p-0 text-success fw-semibold text-decoration-none small d-none" onclick="resendOtp()">
+                                        <i class="fa-solid fa-arrows-rotate me-1"></i>Resend OTP
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div id="verifyOtpAlert" class="alert py-2 small d-none" role="alert"></div>
+
+                            <button type="submit" id="btnVerifyOtp" class="btn btn-nutrient w-100 py-3 rounded-3 shadow-sm fw-bold fs-6 mb-2">
+                                <span id="btnVerifyText"><i class="fa-solid fa-shield-halved me-2"></i>Verify & Login</span>
+                                <span id="btnVerifySpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- WhatsApp Notification Badge -->
+                    <div class="bg-light p-3 rounded-3 mt-4 border border-light-subtle d-flex align-items-start gap-2">
+                        <i class="fa-brands fa-whatsapp text-success fs-4 mt-1"></i>
+                        <div class="small">
+                            <strong class="text-dark">Instant WhatsApp Welcome Catalog</strong>
+                            <p class="text-muted mb-0">Upon login, our automated system will send today's fresh menu with 30% discount prices and subscription options directly to your WhatsApp.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================== -->
+                <!-- TAB 2: PASSWORD AUTHENTICATION (ADMIN / FLEET) -->
+                <!-- ============================================== -->
+                <div id="passwordSection" class="d-none">
+                    <div class="text-center mb-3">
+                        <p class="text-muted small mb-0">For Restaurant Management, Delivery Fleet & Password Accounts</p>
+                    </div>
+
+                    <form method="post" action="{% url 'accounts:login' %}">
+                        {% csrf_token %}
+                        {% if next %}
+                            <input type="hidden" name="next" value="{{ next }}">
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-muted">Username or Email</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-user text-muted"></i></span>
+                                {{ form.username }}
+                            </div>
+                            {% if form.username.errors %}
+                                <div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label small fw-semibold text-muted mb-0">Password</label>
+                            </div>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-lock text-muted"></i></span>
+                                {{ form.password }}
+                            </div>
+                            {% if form.password.errors %}
+                                <div class="text-danger small mt-1">{{ form.password.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <button type="submit" class="btn btn-nutrient w-100 py-2 rounded-3 shadow-sm fw-bold">
+                            <i class="fa-solid fa-arrow-right-to-bracket me-2"></i>Log In with Password
+                        </button>
+                    </form>
+
+                    <!-- Staff quick hints -->
+                    <div class="mt-3 p-2 bg-light rounded text-muted small text-center">
+                        <i class="fa-solid fa-shield-halved me-1"></i> Admin & delivery credentials work with password login.
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="text-center small">
+                    <span class="text-muted">Want full email registration?</span>
+                    <a href="{% url 'accounts:register' %}{% if next %}?next={{ next }}{% endif %}" class="text-success fw-bold text-decoration-none ms-1">
+                        Sign Up Here
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let cooldownTimer = null;
+    let secondsLeft = 60;
+    let currentNormalizedPhone = '';
+
+    // Switch between Phone OTP and Password tabs
+    function switchAuthTab(tab) {
+        const tabOtpBtn = document.getElementById('tabOtpBtn');
+        const tabPasswordBtn = document.getElementById('tabPasswordBtn');
+        const otpSection = document.getElementById('otpSection');
+        const passwordSection = document.getElementById('passwordSection');
+
+        if (tab === 'otp') {
+            tabOtpBtn.classList.add('active');
+            tabPasswordBtn.classList.remove('active');
+            otpSection.classList.remove('d-none');
+            passwordSection.classList.add('d-none');
+        } else {
+            tabPasswordBtn.classList.add('active');
+            tabOtpBtn.classList.remove('active');
+            passwordSection.classList.remove('d-none');
+            otpSection.classList.add('d-none');
+        }
+    }
+
+    // Step 1: Dispatch OTP via API
+    async function handleSendOtp(event) {
+        event.preventDefault();
+        const phoneInput = document.getElementById('inputPhone');
+        const rawPhone = phoneInput.value.trim();
+        const alertBox = document.getElementById('sendOtpAlert');
+        const btnSend = document.getElementById('btnSendOtp');
+        const btnText = document.getElementById('btnSendOtpText');
+        const btnSpinner = document.getElementById('btnSendOtpSpinner');
+
+        if (!rawPhone || rawPhone.length < 10) {
+            showAlert(alertBox, 'Please enter a valid 10-digit mobile number.', 'danger');
+            return;
+        }
+
+        btnSend.disabled = true;
+        btnText.classList.add('d-none');
+        btnSpinner.classList.remove('d-none');
+        hideAlert(alertBox);
+
+        try {
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            const response = await fetch("{% url 'accounts:send_otp' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ phone: rawPhone })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                currentNormalizedPhone = rawPhone;
+                document.getElementById('hiddenPhone').value = rawPhone;
+                document.getElementById('displayTargetPhone').innerText = '+91 ' + rawPhone.slice(-10);
+
+                // If in DEBUG mode and dev_otp is provided
+                if (data.dev_otp) {
+                    document.getElementById('devOtpVal').innerText = data.dev_otp;
+                    document.getElementById('devOtpPill').classList.remove('d-none');
+                }
+
+                // Switch to Step 2
+                document.getElementById('otpStep1').classList.add('d-none');
+                document.getElementById('otpStep2').classList.remove('d-none');
+                document.getElementById('inputOtpCode').focus();
+
+                startCooldown(60);
+            } else {
+                showAlert(alertBox, data.message || 'Unable to dispatch OTP. Please check your number.', 'danger');
+            }
+        } catch (err) {
+            showAlert(alertBox, 'Network error. Please try again.', 'danger');
+        } finally {
+            btnSend.disabled = false;
+            btnText.classList.remove('d-none');
+            btnSpinner.classList.add('d-none');
+        }
+    }
+
+    // Step 2: Verify OTP
+    async function handleVerifyOtp(event) {
+        event.preventDefault();
+        const code = document.getElementById('inputOtpCode').value.trim();
+        const phone = document.getElementById('hiddenPhone').value;
+        const firstName = document.getElementById('inputName').value.trim();
+        const nextUrl = document.getElementById('hiddenNext').value;
+        const alertBox = document.getElementById('verifyOtpAlert');
+        const btnVerify = document.getElementById('btnVerifyOtp');
+        const btnText = document.getElementById('btnVerifyText');
+        const btnSpinner = document.getElementById('btnVerifySpinner');
+
+        if (!code || code.length !== 6) {
+            showAlert(alertBox, 'Please enter a 6-digit code.', 'danger');
+            return;
+        }
+
+        btnVerify.disabled = true;
+        btnText.classList.add('d-none');
+        btnSpinner.classList.remove('d-none');
+        hideAlert(alertBox);
+
+        try {
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            const response = await fetch("{% url 'accounts:verify_otp' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    phone: phone,
+                    otp_code: code,
+                    first_name: firstName,
+                    next: nextUrl
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showAlert(alertBox, data.message + ' Redirecting...', 'success');
+                setTimeout(() => {
+                    window.location.href = data.redirect_url;
+                }, 600);
+            } else {
+                showAlert(alertBox, data.message || 'Invalid code. Please try again.', 'danger');
+                btnVerify.disabled = false;
+                btnText.classList.remove('d-none');
+                btnSpinner.classList.add('d-none');
+            }
+        } catch (err) {
+            showAlert(alertBox, 'Verification failed. Please retry.', 'danger');
+            btnVerify.disabled = false;
+            btnText.classList.remove('d-none');
+            btnSpinner.classList.add('d-none');
+        }
+    }
+
+    function quickFillDevOtp() {
+        const devCode = document.getElementById('devOtpVal').innerText.trim();
+        if (devCode) {
+            document.getElementById('inputOtpCode').value = devCode;
+        }
+    }
+
+    function changePhoneNumber() {
+        document.getElementById('otpStep2').classList.add('d-none');
+        document.getElementById('otpStep1').classList.remove('d-none');
+        clearInterval(cooldownTimer);
+    }
+
+    async function resendOtp() {
+        const phone = document.getElementById('hiddenPhone').value;
+        const alertBox = document.getElementById('verifyOtpAlert');
+        hideAlert(alertBox);
+
+        try {
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            const response = await fetch("{% url 'accounts:send_otp' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ phone: phone })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                showAlert(alertBox, 'New OTP dispatched successfully!', 'success');
+                if (data.dev_otp) {
+                    document.getElementById('devOtpVal').innerText = data.dev_otp;
+                }
+                startCooldown(60);
+            } else {
+                showAlert(alertBox, data.message, 'warning');
+            }
+        } catch (err) {
+            showAlert(alertBox, 'Error resending OTP. Please try again.', 'danger');
+        }
+    }
+
+    function startCooldown(sec) {
+        clearInterval(cooldownTimer);
+        secondsLeft = sec;
+        const countdownContainer = document.getElementById('countdownContainer');
+        const cooldownSeconds = document.getElementById('cooldownSeconds');
+        const btnResend = document.getElementById('btnResendOtp');
+
+        countdownContainer.classList.remove('d-none');
+        btnResend.classList.add('d-none');
+        cooldownSeconds.innerText = secondsLeft;
+
+        cooldownTimer = setInterval(() => {
+            secondsLeft--;
+            cooldownSeconds.innerText = secondsLeft;
+            if (secondsLeft <= 0) {
+                clearInterval(cooldownTimer);
+                countdownContainer.classList.add('d-none');
+                btnResend.classList.remove('d-none');
+            }
+        }, 1000);
+    }
+
+    function showAlert(box, msg, type) {
+        box.className = `alert alert-${type} py-2 small mb-3`;
+        box.innerText = msg;
+        box.classList.remove('d-none');
+    }
+
+    function hideAlert(box) {
+        box.classList.add('d-none');
+        box.innerText = '';
+    }
+
+    // Auto check if URL has ?step=otp
+    document.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const step = urlParams.get('step');
+        const phone = urlParams.get('phone');
+        if (step === 'otp' && phone) {
+            document.getElementById('inputPhone').value = phone;
+        }
+    });
+</script>
+{% endblock %}
