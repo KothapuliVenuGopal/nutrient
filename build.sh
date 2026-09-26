@@ -2,14 +2,8 @@
 # Exit on any error
 set -o errexit
 
-# Install production dependencies
+echo "==> Installing production dependencies..."
 pip install -r requirements.txt
 
-# Collect static files into STATIC_ROOT using WhiteNoise
+echo "==> Collecting static assets..."
 python manage.py collectstatic --no-input
-
-# Run database migrations
-python manage.py migrate
-
-# Seed initial super food menu and operational settings (idempotent)
-python manage.py seed_nutrient_data

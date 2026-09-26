@@ -3,7 +3,7 @@ services:
     name: nutrient-food-delivery
     runtime: python
     buildCommand: ./build.sh
-    startCommand: gunicorn food_delivery.wsgi:application --bind 0.0.0.0:$PORT
+    startCommand: ./start.sh
     envVars:
       - key: PYTHON_VERSION
         value: 3.13.7
