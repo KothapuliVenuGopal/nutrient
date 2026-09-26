@@ -77,16 +77,16 @@ This guide covers deploying **Nutrient – The Super Food** (`food_delivery`) to
 2. Create a new project and connect your GitHub repository.
 3. Railway automatically detects `Procfile` and [`railway.json`](railway.json):
    - Builder: Nixpacks with Python 3.13.
-   - Build Command: `./build.sh`
-   - Start Command: `gunicorn food_delivery.wsgi:application --bind 0.0.0.0:$PORT`
+   - Build Command: `./build.sh` (installs dependencies & collects static assets — no DB connection required)
+   - Start Command: `./start.sh` (runs `migrate`, `seed_nutrient_data`, and starts `gunicorn`)
 4. In the Railway Dashboard:
-   - Click **+ New** > **Database** > **Add MySQL** (or PostgreSQL).
-   - In your web service settings, add environment variables:
-     - `DATABASE_URL`: `${{ MySQL.DATABASE_URL }}`
+   - Click **+ New** > **Database** > **Add MySQL** (or **Add PostgreSQL**).
+   - In your web service settings, go to **Variables**:
+     - `DATABASE_URL`: `${{ MySQL.DATABASE_URL }}` (or `${{ Postgres.DATABASE_URL }}`)
      - `DEBUG`: `False`
      - `SECRET_KEY`: `<Generate secure random string>`
-     - `ALLOWED_HOSTS`: `.railway.app,.up.railway.app,yourdomain.com`
-5. Deploy. Railway executes migrations and seeds the database automatically via `build.sh`.
+     - `ALLOWED_HOSTS`: `.railway.app,.up.railway.app` (auto-detected if omitted)
+5. Deploy. Railway automatically compiles assets via `./build.sh`, then executes migrations and seeds the database via `./start.sh` at container boot.
 
 ---
 
